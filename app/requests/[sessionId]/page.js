@@ -5,30 +5,12 @@ import { getSession } from "@/auth";
 import { getOwnedSession, isAgentConfigured, listActivity } from "@/lib/agent";
 import { AppHeader } from "@/components/app-header";
 import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
-import AutoRefresh from "./auto-refresh";
+import { StatusPill, describeStatus, formatStarted } from "../status";
+import AutoRefresh from "../auto-refresh";
 
 export const metadata = {
   title: "Your request — RingAround",
   robots: { index: false, follow: false },
-};
-
-// Session status -> what the requester sees. `idle` covers both "finished this
-// turn" and "paused", so its stop reason picks the wording.
-function describeStatus(session, reason) {
-  if (session.status === "running") return { label: "Working on it", tone: "signal", live: true };
-  if (session.status === "rescheduling") return { label: "Reconnecting", tone: "amber", live: true };
-  if (session.status === "terminated") return { label: "Stopped", tone: "ink", live: false };
-  if (reason === "retries_exhausted" || reason === "refusal") return { label: "Stopped — the agent couldn’t continue", tone: "ink", live: false };
-  if (reason === "budget_reached") return { label: "Paused — spending limit reached", tone: "amber", live: false };
-  if (reason === "requires_action") return { label: "Waiting on an approval", tone: "amber", live: false };
-  return { label: "Done for now", tone: "sage", live: false };
-}
-
-const TONES = {
-  signal: "bg-signal-soft text-signal",
-  amber: "bg-amber-soft text-amber",
-  sage: "bg-sage-soft text-sage",
-  ink: "bg-ink/10 text-ink-soft",
 };
 
 function formatTime(iso) {
@@ -54,11 +36,8 @@ async function RequestStatus({ params }) {
         {session.title || "Your quote request"}
       </h1>
       <p className="mt-4 flex flex-wrap items-center gap-3 text-sm text-ink-soft">
-        <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 font-medium ${TONES[status.tone]}`}>
-          {status.live && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" aria-hidden="true" />}
-          {status.label}
-        </span>
-        <span>Started {new Date(session.created_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+        <StatusPill status={status} />
+        <span>Started {formatStarted(session.created_at)}</span>
       </p>
 
       <section aria-labelledby="activity-heading" className="mt-10">
@@ -90,9 +69,14 @@ async function RequestStatus({ params }) {
       </section>
 
       <div className="mt-10 border-t border-line pt-6">
-        <Link href="/requests/new" className="font-medium underline-offset-4 hover:underline">
-          Start another request
-        </Link>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link href="/requests" className="font-medium underline-offset-4 hover:underline">
+            All your requests
+          </Link>
+          <Link href="/requests/new" className="font-medium underline-offset-4 hover:underline">
+            Start another request
+          </Link>
+        </div>
       </div>
     </div>
   );
