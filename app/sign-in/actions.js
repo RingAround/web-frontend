@@ -21,5 +21,7 @@ export async function signInWithGoogle() {
 }
 
 export async function signOutOfAccount() {
+  // Without auth configured there is no session, and signOut() would fail.
+  if (!isAuthConfigured()) redirect("/");
   await signOut({ redirectTo: "/" });
 }

@@ -21,13 +21,13 @@ Everything lives on the `prod` GitHub Environment (Settings → Environments →
 | `AUTH_SECRET` | secret | Session encryption key, from `openssl rand -base64 32`. Keep it stable: changing it signs everyone out |
 | `GOOGLE_AUTH_ID` | variable | Google OAuth client ID |
 | `GOOGLE_AUTH_SECRET` | secret | Google OAuth client secret |
-
 | `CLAUDE_API_KEY` | secret | Anthropic API key used to start agent sessions |
 | `CLAUDE_AGENT_ID` | variable | Managed Agents agent that runs each request |
 | `CLAUDE_ENVIRONMENT_ID` | variable | Environment its sessions run in |
 | `CLAUDE_VAULT_ID` | variable | Vault holding the credentials the agent's tools need |
+| `ALLOWED_EMAILS` | variable | Google accounts allowed to start calls, comma separated |
 
-When all four `CLAUDE_*` values are set, each production deploy uploads them to the Worker; until then **Find providers** reports that calling isn't switched on. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
+When all four `CLAUDE_*` values and `ALLOWED_EMAILS` are set, each production deploy uploads them to the Worker. Only signed-in accounts on the list get **Find providers**, which starts the agent; everyone else gets **Send request**, which goes to checkout or account review as before, and the server rejects their sessions regardless. An empty or missing list lets nobody call. To change the list, edit the variable and redeploy. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
 
 When `AUTH_SECRET`, `GOOGLE_AUTH_ID` and `GOOGLE_AUTH_SECRET` are all set, each production deploy uploads them to the Worker as `AUTH_SECRET`, `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, the names `auth.js` reads.
 

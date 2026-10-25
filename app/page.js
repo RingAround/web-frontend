@@ -4,6 +4,7 @@ import { AuthNavigation, AuthNavigationFallback } from "@/components/auth-naviga
 import { Arrow, CheckGlyph, PhoneGlyph } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PLANS, PLAN_FEATURES } from "@/lib/plans";
 
 const ROLES = [
   "Property managers",
@@ -159,16 +160,6 @@ const PROMISES = [
   },
 ];
 
-const PLAN_FEATURES = [
-  "Up to 200 quotes every month",
-  "Four-question requests with special instructions",
-  "Saved locations for your properties, stores, or sites",
-  "Shortlist review before any call goes out",
-  "AI calls during business hours, always disclosed",
-  "Side-by-side comparison, labeled firm, estimate, or conditional",
-  "A full record of who was contacted and what they said",
-];
-
 const FAQS = [
   {
     q: "Who does RingAround call?",
@@ -192,7 +183,11 @@ const FAQS = [
   },
   {
     q: "What does it cost?",
-    a: "$20 a month for up to 200 quotes — about 10¢ a quote if you use them all.",
+    a: "Starter is $20 a month for up to 200 quote requests. Unlimited is $100 a month with no cap. Nothing is charged until your account is approved.",
+  },
+  {
+    q: "Why is my account reviewed first?",
+    a: "Every new account is reviewed by our team before it can send requests, so the businesses we call only hear from real customers. We’ll email you as soon as yours is approved.",
   },
 ];
 
@@ -250,7 +245,7 @@ function HeroBoard() {
         {/* request summary */}
         <div className="rounded-[22px] bg-night p-5 text-on-night">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/50">Example request</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/50">Sample request</span>
             <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-signal">
               <span className="h-1.5 w-1.5 rounded-full bg-signal" /> Live
             </span>
@@ -316,6 +311,51 @@ function HeroBoard() {
   );
 }
 
+function PlanCard({ plan }) {
+  const featured = plan.id === "unlimited";
+  const muted = featured ? "text-on-night/60" : "text-ink-soft";
+  return (
+    <div className={`relative flex flex-col overflow-hidden rounded-[32px] border p-8 sm:p-10 ${featured ? "border-night bg-night text-on-night" : "border-line bg-surface"}`}>
+      {featured && (
+        <svg viewBox="0 0 400 400" className="pointer-events-none absolute -right-28 -top-28 w-96 text-on-night" aria-hidden="true">
+          {[70, 120, 170].map((r) => (
+            <circle key={r} cx="200" cy="200" r={r} fill="none" stroke="currentColor" strokeOpacity="0.1" />
+          ))}
+        </svg>
+      )}
+      <div className="relative flex items-center justify-between gap-4">
+        <p className={`font-mono text-[11px] uppercase tracking-[0.2em] ${featured ? "text-on-night/50" : "text-ink-soft"}`}>{plan.name}</p>
+        {featured && <span className="rounded-full bg-signal px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-white">For teams</span>}
+      </div>
+      <p className="relative mt-6 flex items-end gap-2">
+        <span className="font-display text-[6rem] leading-[0.8]">${plan.price}</span>
+        <span className={`pb-1 ${muted}`}>/ month</span>
+      </p>
+      <p className="relative mt-8 text-xl">{plan.quota}</p>
+      <p className={`relative mt-2 ${muted}`}>{plan.blurb}</p>
+      <div className="relative mt-8" aria-hidden="true">
+        {featured ? (
+          <p className="font-display text-7xl leading-none text-signal">∞</p>
+        ) : (
+          <div className="grid w-fit grid-cols-[repeat(20,0.375rem)] gap-1.5">
+            {Array.from({ length: 200 }, (_, i) => (
+              <span key={i} className="h-1.5 w-1.5 rounded-full bg-ink/20" />
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="relative mt-auto pt-10">
+        <Link
+          href={`/checkout/${plan.id}`}
+          className={`group inline-flex items-center gap-2 rounded-full px-6 py-3.5 font-medium transition ${featured ? "bg-signal text-white hover:bg-paper hover:text-ink" : "bg-ink text-paper hover:bg-signal hover:text-white"}`}
+        >
+          Choose {plan.name} <Arrow />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="relative flex flex-1 flex-col overflow-x-clip">
@@ -359,15 +399,15 @@ export default function Home() {
                 Describe the job once. RingAround finds local providers, calls them with your approval, and hands back quotes you can actually compare — so you can get back to running the property, the store, or the building.
               </p>
               <div className="rise mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.24s" }}>
-                <Link href="/sign-in" className="group inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper">
-                  Get early access <Arrow />
-                </Link>
+                <a href="#pricing" className="group inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper">
+                  Get started <Arrow />
+                </a>
                 <a href="#how" className="inline-flex items-center gap-2 rounded-full border border-ink/15 px-6 py-3.5 font-medium transition hover:border-ink">
                   See how it works
                 </a>
               </div>
               <ul className="rise mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft" style={{ animationDelay: "0.3s" }}>
-                {["$20/mo for up to 200 quotes", "You approve every call", "Always says it’s an AI"].map((t) => (
+                {["Plans from $20/mo", "You approve every call", "Always says it’s an AI"].map((t) => (
                   <li key={t} className="flex items-center gap-2">
                     <span className="h-1 w-1 rounded-full bg-signal" />
                     {t}
@@ -478,7 +518,7 @@ export default function Home() {
                   <p className="text-sm font-semibold">Turnover deep clean · Unit 4B</p>
                   <p className="text-xs text-ink-soft">5 calls · 3 answered · 3 quotes</p>
                 </div>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-ink-soft">Example results</span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-ink-soft">Sample results</span>
               </div>
               <div className="divide-y divide-line">
                 {QUOTES.map((q, i) => (
@@ -589,53 +629,33 @@ export default function Home() {
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">Pricing</p>
                 <h2 className="mt-4 max-w-2xl font-display text-5xl leading-[1.02] tracking-tight md:text-6xl">
-                  One plan. <em>Simple math.</em>
+                  Two plans. <em>No surprises.</em>
                 </h2>
               </div>
-              <p className="max-w-sm text-ink-soft">Twenty dollars covers up to two hundred quotes a month — about a dime a quote when you use them all.</p>
+              <p className="max-w-sm text-ink-soft">Billed monthly. Both plans include the whole product; the only difference is how many requests you send.</p>
             </div>
 
-            <div className="mt-16 grid overflow-hidden rounded-[32px] border border-line bg-surface shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)] lg:grid-cols-[1fr_1.15fr]">
-              <div className="relative overflow-hidden bg-night p-8 text-on-night sm:p-12">
-                <svg viewBox="0 0 400 400" className="pointer-events-none absolute -right-28 -top-28 w-96 text-on-night" aria-hidden="true">
-                  {[70, 120, 170].map((r) => (
-                    <circle key={r} cx="200" cy="200" r={r} fill="none" stroke="currentColor" strokeOpacity="0.1" />
-                  ))}
-                </svg>
-                <p className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-on-night/50">Monthly plan</p>
-                <p className="relative mt-6 flex items-end gap-2">
-                  <span className="font-display text-[7rem] leading-[0.8]">$20</span>
-                  <span className="pb-1 text-on-night/60">/ month</span>
-                </p>
-                <p className="relative mt-8 text-xl">
-                  Up to <span className="text-signal">200 quotes</span> every month
-                </p>
-                <div className="relative mt-6 grid w-fit grid-cols-[repeat(20,0.375rem)] gap-1.5" aria-hidden="true">
-                  {Array.from({ length: 200 }, (_, i) => (
-                    <span key={i} className="h-1.5 w-1.5 rounded-full bg-on-night/25" />
-                  ))}
-                </div>
-                <p className="relative mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-on-night/45">≈ 10¢ a quote at full use</p>
-                <Link href="/sign-in" className="group relative mt-10 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white transition hover:bg-paper hover:text-ink">
-                  Get early access <Arrow />
-                </Link>
-              </div>
-              <div className="flex flex-col p-8 sm:p-12">
-                <p className="font-semibold">Everything’s included</p>
-                <ul className="mt-6 space-y-4">
-                  {PLAN_FEATURES.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-ink-soft">
-                      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sage-soft text-sage">
-                        <CheckGlyph className="h-3 w-3" />
-                      </span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-10 border-t border-line pt-6 text-sm leading-relaxed text-ink-soft lg:mt-auto">
-                  Quotes are what each business tells our agent. Prices and availability aren’t guaranteed until you confirm with the provider.
-                </p>
-              </div>
+            <div className="mt-16 grid gap-6 lg:grid-cols-2">
+              {PLANS.map((plan) => (
+                <PlanCard key={plan.id} plan={plan} />
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-[32px] border border-line bg-surface p-8 sm:p-10">
+              <p className="font-semibold">Included in both plans</p>
+              <ul className="mt-6 grid gap-x-10 gap-y-4 sm:grid-cols-2">
+                {PLAN_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-3 text-ink-soft">
+                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sage-soft text-sage">
+                      <CheckGlyph className="h-3 w-3" />
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8 border-t border-line pt-6 text-sm leading-relaxed text-ink-soft">
+                New accounts are reviewed before activation, and nothing is charged until yours is approved. Quotes are what each business tells our agent; prices and availability aren’t guaranteed until you confirm with the provider.
+              </p>
             </div>
           </div>
         </section>
@@ -674,11 +694,11 @@ export default function Home() {
                 Your next three quotes are a few questions away.
               </h2>
               <p className="mx-auto mt-6 max-w-xl text-white/85">
-                $20 a month for up to 200 quotes. Join early access and hand off the phone work.
+                Plans start at $20 a month. Set up your account in a few minutes.
               </p>
-              <Link href="/sign-in" className="group mt-10 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-4 font-medium text-paper transition hover:bg-surface hover:text-ink">
-                Get early access <Arrow />
-              </Link>
+              <a href="#pricing" className="group mt-10 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-4 font-medium text-paper transition hover:bg-surface hover:text-ink">
+                Get started <Arrow />
+              </a>
             </div>
           </div>
         </section>
@@ -687,9 +707,16 @@ export default function Home() {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 text-sm text-ink-soft sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Logo className="text-ink" />
-          <p>RingAround requests quotes; it doesn’t book, pay, or sign on your behalf.</p>
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2">
+            <a href="#pricing" className="hover:text-ink">Pricing</a>
+            <Link href="/requests/new" className="hover:text-ink">New request</Link>
+            <Link href="/sign-in" className="hover:text-ink">Sign in</Link>
+          </nav>
           <p>© 2026 RingAround</p>
         </div>
+        <p className="mx-auto max-w-6xl px-4 pb-10 text-xs text-ink-soft sm:px-6">
+          RingAround requests quotes; it doesn’t book, pay, or sign on your behalf.
+        </p>
       </footer>
     </div>
   );
