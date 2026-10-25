@@ -9,6 +9,12 @@ export function isAuthConfigured() {
   );
 }
 
+// The current session, or null when auth isn't configured (auth() throws
+// without a secret).
+export async function getSession() {
+  return isAuthConfigured() ? auth() : null;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google({

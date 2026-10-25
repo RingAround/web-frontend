@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SignOutButton } from "@/components/sign-out-button";
-import { signOutOfAccount } from "@/app/sign-in/actions";
+import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
 import RequestForm from "./request-form";
 
 export const metadata = {
@@ -23,9 +23,9 @@ export default function NewRequestPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <form action={signOutOfAccount}>
-              <SignOutButton className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-full border border-line px-3 py-2 text-sm font-medium text-ink transition hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal" />
-            </form>
+            <Suspense fallback={<AccountNavigationFallback />}>
+              <AccountNavigation />
+            </Suspense>
           </div>
         </div>
       </header>
