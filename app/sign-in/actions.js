@@ -10,7 +10,7 @@ export async function signInWithGoogle() {
   }
 
   try {
-    await signIn("google", { redirectTo: "/request/new" });
+    await signIn("google", { redirectTo: "/requests/new" });
   } catch (error) {
     if (error instanceof AuthError) {
       redirect(`/sign-in?error=${encodeURIComponent(error.type)}`);
@@ -21,5 +21,5 @@ export async function signInWithGoogle() {
 }
 
 export async function signOutOfAccount() {
-  await signOut({ redirectTo: "/sign-in" });
+  await signOut({ redirectTo: "/" });
 }

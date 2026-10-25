@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AuthNavigation, AuthNavigationFallback } from "@/components/auth-navigation";
 import { Arrow, CheckGlyph, PhoneGlyph } from "@/components/icons";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -319,22 +321,22 @@ export default function Home() {
     <div className="relative flex flex-1 flex-col overflow-x-clip">
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-line/60 bg-paper/80 backdrop-blur-md">
-        <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <a href="#top" aria-label="RingAround home">
+        <nav className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
+          <a href="#" aria-label="RingAround home">
             <Logo />
           </a>
-          <div className="hidden items-center gap-8 text-sm text-ink-soft md:flex">
+          <div className="hidden items-center gap-8 text-sm text-ink-soft lg:flex">
             <a href="#how" className="hover:text-ink">How it works</a>
             <a href="#who" className="hover:text-ink">Who it’s for</a>
             <a href="#trust" className="hover:text-ink">Guardrails</a>
             <a href="#pricing" className="hover:text-ink">Pricing</a>
             <a href="#faq" className="hover:text-ink">FAQ</a>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <ThemeToggle />
-            <Link href="/sign-in" className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-signal hover:text-white">
-              Get early access <Arrow />
-            </Link>
+            <Suspense fallback={<AuthNavigationFallback />}>
+              <AuthNavigation />
+            </Suspense>
           </div>
         </nav>
       </header>

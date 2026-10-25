@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth, isAuthConfigured } from "@/auth";
 import { signInWithGoogle, signOutOfAccount } from "./actions";
@@ -40,6 +41,8 @@ async function SignInCard({ searchParams }) {
   const configured = isAuthConfigured();
   const session = configured ? await auth() : null;
   const user = session?.user;
+
+  if (user) redirect("/");
 
   return <SignInCardContent user={user} configured={configured} error={error} />;
 }
