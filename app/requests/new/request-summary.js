@@ -21,19 +21,19 @@ function SummaryRow({ label, empty, children }) {
 export function RequestSummary({ view }) {
   const answeredCount = view.answered.filter(Boolean).length;
   return (
-    <div className="rounded-[28px] border border-line bg-white/80 p-2 shadow-[0_30px_80px_-40px_rgb(21_20_15/0.35)]">
-      <div className="rounded-[22px] bg-ink p-5 text-paper">
+    <div className="rounded-[28px] border border-line bg-surface/80 p-2 shadow-[0_30px_80px_-40px_rgb(21_20_15/0.35)]">
+      <div className="rounded-[22px] bg-night p-5 text-on-night">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-paper/50">Request summary</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/50">Request summary</span>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-signal">Draft</span>
         </div>
         <p className="mt-3 line-clamp-3 break-words font-display text-2xl leading-tight">
-          {view.service || <span className="text-paper/35">What do you need done?</span>}
+          {view.service || <span className="text-on-night/35">What do you need done?</span>}
         </p>
         {view.category && (
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-paper/10 px-2.5 py-1 text-xs text-paper/80">
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-on-night/10 px-2.5 py-1 text-xs text-on-night/80">
             {view.category.label}
-            {view.category.source === "suggested" && <span className="text-paper/45">· suggested</span>}
+            {view.category.source === "suggested" && <span className="text-on-night/45">· suggested</span>}
           </p>
         )}
       </div>
@@ -88,7 +88,7 @@ export function RequestSummary({ view }) {
 
 function ReviewItem({ label, children }) {
   return (
-    <div className="bg-white p-6">
+    <div className="bg-surface p-6">
       <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">{label}</dt>
       <dd className="mt-2 break-words leading-relaxed">{children}</dd>
     </div>
@@ -113,9 +113,9 @@ export function ReviewPanel({ request, view, assumptions, onEdit }) {
         This is what the agent will work from. Nothing has been sent, and no one has been called.
       </p>
 
-      <div className="mt-10 overflow-hidden rounded-[28px] border border-line bg-white shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)]">
-        <div className="bg-ink p-6 text-paper sm:p-8">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-paper/50">
+      <div className="mt-10 overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)]">
+        <div className="bg-night p-6 text-on-night sm:p-8">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/50">
             {view.category ? view.category.label : "Service"}
           </p>
           <p className="mt-3 break-words font-display text-3xl leading-tight sm:text-4xl">{request.serviceDescription}</p>
@@ -158,7 +158,7 @@ export function ReviewPanel({ request, view, assumptions, onEdit }) {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">What happens next</p>
         <ol className="mt-4 grid gap-3 sm:grid-cols-3">
           {NEXT_STEPS.map((step, i) => (
-            <li key={step.title} className="rounded-2xl border border-line bg-white/60 p-5">
+            <li key={step.title} className="rounded-2xl border border-line bg-surface/60 p-5">
               <span className="font-mono text-xs text-signal">{String(i + 1).padStart(2, "0")}</span>
               <p className="mt-2 font-medium">{step.title}</p>
               <p className="mt-1 text-sm text-ink-soft">{step.body}</p>

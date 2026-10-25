@@ -1,23 +1,50 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --paper: #f5f1e8;
   --paper-2: #ece6d8;
+  --surface: #ffffff;
   --ink: #15140f;
   --ink-soft: #57534a;
   --line: #d9d1bf;
+  --night: #15140f;
+  --on-night: #f5f1e8;
   --signal: #ff5a1f;
   --signal-soft: #ffe2d4;
   --sage: #2f6b4f;
   --sage-soft: #dcebe1;
   --amber: #b7791f;
   --amber-soft: #f6e7c8;
+  --grain: rgb(21 20 15 / 0.06);
   color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: #12110f;
+  --paper-2: #1f1d19;
+  --surface: #1a1815;
+  --ink: #f1ece2;
+  --ink-soft: #a9a396;
+  --line: #322f29;
+  --night: #0a0908;
+  --on-night: #f1ece2;
+  --signal-soft: #3b2117;
+  --sage: #7cc39d;
+  --sage-soft: #1b2e23;
+  --amber: #e2a94f;
+  --amber-soft: #352a17;
+  --grain: rgb(241 236 226 / 0.045);
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
+  --color-surface: var(--surface);
+  --color-night: var(--night);
+  --color-on-night: var(--on-night);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-line: var(--line);
@@ -59,7 +86,7 @@ p {
 
 /* Faint paper grain */
 .grain {
-  background-image: radial-gradient(rgb(21 20 15 / 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(var(--grain) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
