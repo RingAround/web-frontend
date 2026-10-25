@@ -9,16 +9,16 @@ const browserSnapshot = () => true;
 const serverSnapshot = () => false;
 const inputClass = "mt-2 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm text-ink outline-none transition placeholder:text-ink-soft/60 focus:border-signal focus:ring-4 focus:ring-signal/15 aria-[invalid=true]:border-signal";
 
-export default function ProfileGate({ user }) {
+export default function ProfileGate({ user, canCall }) {
   const hydrated = useSyncExternalStore(subscribe, browserSnapshot, serverSnapshot);
   if (!hydrated) return <p role="status" className="px-6 py-16 text-center text-ink-soft">Loading your profile…</p>;
-  return <ProfileGateBody key={user.id} user={user} />;
+  return <ProfileGateBody key={user.id} user={user} canCall={canCall} />;
 }
 
-function ProfileGateBody({ user }) {
+function ProfileGateBody({ user, canCall }) {
   const [profile, setProfile] = useState(() => readUserProfile(user.id));
 
-  if (profile) return <RequestForm profile={profile} userId={user.id} />;
+  if (profile) return <RequestForm profile={profile} userId={user.id} canCall={canCall} />;
 
   return <ProfileModal user={user} onSaved={setProfile} />;
 }

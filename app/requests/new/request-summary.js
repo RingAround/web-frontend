@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import { Arrow, CheckGlyph } from "@/components/icons";
 
 function Badge({ children }) {
@@ -95,14 +98,32 @@ function ReviewItem({ label, children }) {
   );
 }
 
+// Approved accounts send straight to the agent; everyone else goes through
+// checkout or account review first, where the shortlist step still applies.
 const NEXT_STEPS = [
   { title: "Find providers", body: "We search for relevant businesses near the job site." },
   { title: "Approve the shortlist", body: "You choose who gets contacted and set the call limit." },
   { title: "Get quotes", body: "The agent calls during business hours and reports back." },
 ];
 
+const CALLING_STEPS = [
+  { title: "Find providers", body: "The agent searches for relevant businesses near the job site." },
+  { title: "Make the calls", body: "It calls them during business hours, giving your name and callback number." },
+  { title: "Get quotes", body: "Progress and quotes show up on the request page as they come in." },
+];
+
 // Read-back of a validated request before anything is sent.
-export function ReviewPanel({ request, view, assumptions, onEdit, onSend }) {
+export function ReviewPanel({ request, view, assumptions, canCall, onEdit, onSend }) {
+  const [pending, startSending] = useTransition();
+  const [error, setError] = useState(null);
+  const steps = canCall ? CALLING_STEPS : NEXT_STEPS;
+
+  // onSend resolves with an error message, or navigates away.
+  function send() {
+    setError(null);
+    startSending(async () => setError((await onSend()) ?? null));
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-10 sm:px-6 md:pt-14">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">Review</p>
@@ -110,7 +131,9 @@ export function ReviewPanel({ request, view, assumptions, onEdit, onSend }) {
         Look <em>right?</em>
       </h1>
       <p className="mt-4 max-w-xl text-ink-soft">
-        This is what the agent will work from. Nothing has been sent, and no one has been called.
+        {canCall
+          ? "This is what the agent will work from. Nothing is sent, and no one is called, until you choose Find providers."
+          : "This is what the agent will work from. Nothing has been sent, and no one has been called."}
       </p>
 
       <div className="mt-10 overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)]">
@@ -157,7 +180,7 @@ export function ReviewPanel({ request, view, assumptions, onEdit, onSend }) {
       <div className="mt-10">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">What happens next</p>
         <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-          {NEXT_STEPS.map((step, i) => (
+          {steps.map((step, i) => (
             <li key={step.title} className="rounded-2xl border border-line bg-surface/60 p-5">
               <span className="font-mono text-xs text-signal">{String(i + 1).padStart(2, "0")}</span>
               <p className="mt-2 font-medium">{step.title}</p>
@@ -181,12 +204,23 @@ export function ReviewPanel({ request, view, assumptions, onEdit, onSend }) {
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <button
             type="button"
-            onClick={onSend}
-            className="group inline-flex items-center justify-center gap-2 rounded-full bg-signal px-7 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper"
+            onClick={send}
+            disabled={pending}
+            aria-busy={pending}
+            className="group inline-flex items-center justify-center gap-2 rounded-full bg-signal px-7 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/45 disabled:shadow-none"
           >
-            Send request <Arrow />
+            {canCall ? (pending ? "Starting the agent…" : "Find providers") : "Send request"}
+            {!pending && <Arrow />}
           </button>
-          <p className="text-xs text-ink-soft">You’ll approve the provider shortlist before any calls go out.</p>
+          {error ? (
+            <p role="alert" className="max-w-xs text-sm text-signal sm:text-right">{error}</p>
+          ) : (
+            <p className="text-xs text-ink-soft">
+              {canCall
+                ? "The agent starts calling as soon as you send this."
+                : "You’ll approve the provider shortlist before any calls go out."}
+            </p>
+          )}
         </div>
       </div>
     </div>

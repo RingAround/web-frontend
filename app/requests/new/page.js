@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getSession } from "@/auth";
+import { canStartCalls } from "@/lib/agent";
 import { AppHeader } from "@/components/app-header";
 import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
 import ProfileGate from "./profile-gate";
@@ -16,7 +17,12 @@ async function AuthenticatedRequest() {
   await connection();
   const session = await getSession();
   if (!session?.user?.id) redirect("/sign-in");
-  return <ProfileGate user={{ id: session.user.id, name: session.user.name || "" }} />;
+  return (
+    <ProfileGate
+      user={{ id: session.user.id, name: session.user.name || "" }}
+      canCall={canStartCalls(session.user.email)}
+    />
+  );
 }
 
 export default function NewRequestPage() {

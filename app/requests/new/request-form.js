@@ -21,6 +21,7 @@ import { addLocation, readLocations, writeLocations } from "@/lib/saved-location
 import { SERVICE_CATEGORIES, categoryLabel, suggestCategory } from "@/lib/service-categories";
 import { useBrowserValue } from "@/lib/use-browser-value";
 import { RequestSummary, ReviewPanel } from "./request-summary";
+import { sendRequest } from "./actions";
 
 const DRAFT_KEY = REQUEST_DRAFT_KEY;
 
@@ -141,20 +142,20 @@ function listAssumptions(view, form, savedNow) {
   return notes;
 }
 
-export default function RequestForm({ profile, userId }) {
+export default function RequestForm({ profile, userId, canCall }) {
   const inBrowser = useBrowserValue(() => true);
   const profileLocation = profile
     ? { id: "profile-default", label: "Default address", address: profile.defaultAddress, isDefault: true }
     : null;
   const draftKey = userId ? `${DRAFT_KEY}:${encodeURIComponent(userId)}` : DRAFT_KEY;
   return inBrowser ? (
-    <RequestFormBody profileLocation={profileLocation} userId={userId} draftKey={draftKey} />
+    <RequestFormBody profileLocation={profileLocation} userId={userId} draftKey={draftKey} profile={profile} canCall={canCall} />
   ) : (
     <FormSkeleton />
   );
 }
 
-function RequestFormBody({ profileLocation, userId, draftKey }) {
+function RequestFormBody({ profileLocation, userId, draftKey, profile, canCall }) {
   const router = useRouter();
   // The profile address comes first as the default; addresses saved from this form follow.
   const [savedLocations, setSavedLocations] = useState(() => readLocations(userId));
@@ -285,19 +286,34 @@ function RequestFormBody({ profileLocation, userId, draftKey }) {
     window.scrollTo({ top: 0 });
   }
 
-  // Sending needs an account: new customers go to checkout, applicants to the
-  // account review page. The draft stays saved either way.
-  function sendRequest() {
+  // Approved accounts start the agent; the server checks again. Everyone else
+  // goes to checkout or the account review page, and the draft stays saved.
+  // Resolves with an error message, or navigates away.
+  async function send() {
+    if (canCall) {
+      const result = await sendRequest({ request: review.request, profile });
+      if (result.sessionId) {
+        try {
+          window.localStorage.removeItem(draftKey);
+        } catch {
+          // Storage blocked: the stale draft is harmless.
+        }
+        router.push(`/requests/${result.sessionId}`);
+        return null;
+      }
+      if (!result.needsAccount) return result.error;
+    }
     try {
       window.sessionStorage.setItem(PENDING_REQUEST_KEY, "1");
     } catch {
       // Storage blocked: the draft itself is still saved.
     }
     router.push(readAccount() ? "/account/pending" : "/checkout/starter");
+    return null;
   }
 
   if (review) {
-    return <ReviewPanel {...review} onEdit={() => setReview(null)} onSend={sendRequest} />;
+    return <ReviewPanel {...review} canCall={canCall} onEdit={() => setReview(null)} onSend={send} />;
   }
 
   const describedBy = (field) => (errors[field] ? `field-${field}-error` : undefined);
