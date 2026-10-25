@@ -28,6 +28,12 @@ Until all three credentials are configured, the page shows an unavailable messag
 
 Set the same environment variables in the hosting provider's secret configuration; `.env.local` is not deployed through Git. Set `AUTH_URL` to the public HTTPS origin and register its exact `/api/auth/callback/google` redirect URI with Google. Add a separate OAuth client for production if you want to isolate environments.
 
-Future protected pages and server actions should verify the session using `auth()` from `@/auth` before accessing private data. No routes are automatically protected by this change.
+The `/requests/new` route requires a valid session. Future protected pages and server actions should also verify the session using `auth()` from `@/auth` before accessing private data.
+
+## Required profile
+
+After login, `/requests/new` checks for a valid profile in this browser's local storage, keyed by the authenticated user's ID (`ringaround:user-profile:v1:<user-id>`). Missing, malformed, or incomplete profiles open a required modal for name, phone number, optional company, and default address. Escape and backdrop clicks do not dismiss it. The request form becomes available only after validation and a successful local-storage write. If storage is blocked or full, the modal stays open and explains how to retry.
+
+Returning users with a valid profile skip the modal. Their default address is selected in the request form, and request drafts are also stored per user. Profiles do not sync across devices or browsers; clearing browser storage requires entering the details again. Local profile validation is a UI requirement, not a substitute for server authorization or address/phone verification.
 
 References: [Auth.js installation](https://authjs.dev/getting-started/installation), [Google provider](https://authjs.dev/getting-started/providers/google).

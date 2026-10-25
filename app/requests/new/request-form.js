@@ -80,15 +80,16 @@ function useBrowserValue(read) {
   return useSyncExternalStore(noopSubscribe, read, () => null);
 }
 
-function readDraft() {
+function readDraft(locations, draftKey) {
+  const emptyForm = { ...EMPTY_FORM, locationId: locations.find((location) => location.isDefault)?.id || locations[0]?.id || "other" };
   try {
-    const saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null");
-    if (!saved) return EMPTY_FORM;
-    const draft = { ...EMPTY_FORM, ...saved };
-    const knownLocation = draft.locationId === "other" || DEMO_LOCATIONS.some((l) => l.id === draft.locationId);
-    return knownLocation ? draft : { ...draft, locationId: DEFAULT_LOCATION_ID };
+    const saved = JSON.parse(window.localStorage.getItem(draftKey) ?? "null");
+    if (!saved) return emptyForm;
+    const draft = { ...emptyForm, ...saved };
+    const knownLocation = draft.locationId === "other" || locations.some((l) => l.id === draft.locationId);
+    return knownLocation ? draft : { ...draft, locationId: emptyForm.locationId };
   } catch {
-    return EMPTY_FORM;
+    return emptyForm;
   }
 }
 
@@ -128,13 +129,17 @@ function listAssumptions(view, form) {
   return notes;
 }
 
-export default function RequestForm() {
+export default function RequestForm({ profile, userId }) {
   const inBrowser = useBrowserValue(() => true);
-  return inBrowser ? <RequestFormBody /> : <FormSkeleton />;
+  const locations = profile
+    ? [{ id: "profile-default", label: "Default address", address: profile.defaultAddress, isDefault: true }]
+    : DEMO_LOCATIONS;
+  const draftKey = userId ? `${DRAFT_KEY}:${encodeURIComponent(userId)}` : DRAFT_KEY;
+  return inBrowser ? <RequestFormBody locations={locations} draftKey={draftKey} /> : <FormSkeleton />;
 }
 
-function RequestFormBody() {
-  const [form, setForm] = useState(readDraft);
+function RequestFormBody({ locations, draftKey }) {
+  const [form, setForm] = useState(() => readDraft(locations, draftKey));
   const [errors, setErrors] = useState({});
   const [saveState, setSaveState] = useState("idle");
   const [review, setReview] = useState(null);
@@ -144,11 +149,11 @@ function RequestFormBody() {
 
   const suggested = suggestCategory(form.service);
   const categoryId = form.category ?? suggested;
-  const savedLocation = DEMO_LOCATIONS.find((l) => l.id === form.locationId) ?? null;
+  const savedLocation = locations.find((l) => l.id === form.locationId) ?? null;
   const timeZone = form.timeZone || savedLocation?.timeZone || browserTimeZone || "America/Los_Angeles";
   const timeZoneSource = form.timeZone
     ? "chosen by you"
-    : savedLocation
+    : savedLocation?.timeZone
       ? `from ${savedLocation.label}`
       : "from your browser";
   const timeZoneOptions = TIME_ZONES.some((z) => z.id === timeZone)
@@ -189,7 +194,7 @@ function RequestFormBody() {
     setSaveState("saving");
     saveTimer.current = setTimeout(() => {
       try {
-        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+        window.localStorage.setItem(draftKey, JSON.stringify(next));
         setSaveState("saved");
       } catch {
         setSaveState("unavailable");
@@ -200,11 +205,11 @@ function RequestFormBody() {
   function startOver() {
     clearTimeout(saveTimer.current);
     try {
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(draftKey);
     } catch {
       // Storage blocked: nothing to clear.
     }
-    setForm(EMPTY_FORM);
+    setForm(readDraft(locations, draftKey));
     setErrors({});
     setSaveState("idle");
   }
@@ -322,7 +327,7 @@ function RequestFormBody() {
             <fieldset>
               <legend className="sr-only">Service location</legend>
               <div className="grid gap-3 sm:grid-cols-2">
-                {DEMO_LOCATIONS.map((loc) => (
+                {locations.map((loc) => (
                   <label key={loc.id} className={cardChoiceClass}>
                     <input
                       type="radio"
