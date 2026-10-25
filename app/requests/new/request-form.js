@@ -81,27 +81,28 @@ function useBrowserValue(read) {
   return useSyncExternalStore(noopSubscribe, read, () => null);
 }
 
-function readDraft() {
+function readDraft(locations, draftKey) {
+  const emptyForm = { ...EMPTY_FORM, locationId: locations.find((location) => location.isDefault)?.id || locations[0]?.id || "other" };
   try {
-    const saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null");
-    if (!saved || typeof saved !== "object") return EMPTY_FORM;
+    const saved = JSON.parse(window.localStorage.getItem(draftKey) ?? "null");
+    if (!saved || typeof saved !== "object") return emptyForm;
     // Keep only fields the form knows, with the right types and ids that still
     // exist; a stale or hand-edited draft could otherwise submit unknown values.
     const draft = Object.fromEntries(
-      Object.entries(EMPTY_FORM).map(([key, fallback]) => [
+      Object.entries(emptyForm).map(([key, fallback]) => [
         key,
         typeof fallback === "string" && typeof saved[key] !== "string" ? fallback : (saved[key] ?? fallback),
       ]),
     );
     const known = (value, options) => options.some((o) => o.id === value);
     if (!known(draft.category, SERVICE_CATEGORIES)) draft.category = null;
-    if (draft.locationId !== "other" && !known(draft.locationId, DEMO_LOCATIONS)) draft.locationId = DEFAULT_LOCATION_ID;
+    if (draft.locationId !== "other" && !known(draft.locationId, locations)) draft.locationId = emptyForm.locationId;
     if (!known(draft.timing, TIMING_OPTIONS)) draft.timing = null;
-    if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = EMPTY_FORM.arrival;
-    if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = EMPTY_FORM.budget;
+    if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = emptyForm.arrival;
+    if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = emptyForm.budget;
     return draft;
   } catch {
-    return EMPTY_FORM;
+    return emptyForm;
   }
 }
 
@@ -141,13 +142,17 @@ function listAssumptions(view, form) {
   return notes;
 }
 
-export default function RequestForm() {
+export default function RequestForm({ profile, userId }) {
   const inBrowser = useBrowserValue(() => true);
-  return inBrowser ? <RequestFormBody /> : <FormSkeleton />;
+  const locations = profile
+    ? [{ id: "profile-default", label: "Default address", address: profile.defaultAddress, isDefault: true }]
+    : DEMO_LOCATIONS;
+  const draftKey = userId ? `${DRAFT_KEY}:${encodeURIComponent(userId)}` : DRAFT_KEY;
+  return inBrowser ? <RequestFormBody locations={locations} draftKey={draftKey} /> : <FormSkeleton />;
 }
 
-function RequestFormBody() {
-  const [form, setForm] = useState(readDraft);
+function RequestFormBody({ locations, draftKey }) {
+  const [form, setForm] = useState(() => readDraft(locations, draftKey));
   const [errors, setErrors] = useState({});
   const [saveState, setSaveState] = useState("idle");
   const [review, setReview] = useState(null);
@@ -156,11 +161,11 @@ function RequestFormBody() {
 
   const suggested = suggestCategory(form.service);
   const categoryId = form.category ?? suggested;
-  const savedLocation = DEMO_LOCATIONS.find((l) => l.id === form.locationId) ?? null;
+  const savedLocation = locations.find((l) => l.id === form.locationId) ?? null;
   const timeZone = form.timeZone || savedLocation?.timeZone || browserTimeZone || "America/Los_Angeles";
   const timeZoneSource = form.timeZone
     ? "chosen by you"
-    : savedLocation
+    : savedLocation?.timeZone
       ? `from ${savedLocation.label}`
       : "from your browser";
   // Today where the job is, re-read every render so it can't go stale overnight.
@@ -205,7 +210,7 @@ function RequestFormBody() {
     setSaveState("saving");
     saveTimer.current = setTimeout(() => {
       try {
-        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+        window.localStorage.setItem(draftKey, JSON.stringify(next));
         setSaveState("saved");
       } catch {
         setSaveState("unavailable");
@@ -216,11 +221,11 @@ function RequestFormBody() {
   function startOver() {
     clearTimeout(saveTimer.current);
     try {
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(draftKey);
     } catch {
       // Storage blocked: nothing to clear.
     }
-    setForm(EMPTY_FORM);
+    setForm(readDraft(locations, draftKey));
     setErrors({});
     setSaveState("idle");
   }
@@ -338,7 +343,7 @@ function RequestFormBody() {
             <fieldset>
               <legend className="sr-only">Service location</legend>
               <div className="grid gap-3 sm:grid-cols-2">
-                {DEMO_LOCATIONS.map((loc) => (
+                {locations.map((loc) => (
                   <label key={loc.id} className={cardChoiceClass}>
                     <input
                       type="radio"
