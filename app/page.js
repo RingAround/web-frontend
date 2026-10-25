@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Arrow, CheckGlyph, PhoneGlyph } from "@/components/icons";
+import { Logo } from "@/components/logo";
 
 const ROLES = [
   "Property managers",
@@ -191,19 +193,6 @@ const FAQS = [
   },
 ];
 
-function Logo({ className = "" }) {
-  return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
-        <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.35" />
-        <circle cx="16" cy="16" r="9" fill="none" stroke="currentColor" strokeWidth="1.75" opacity="0.65" />
-        <circle cx="16" cy="16" r="4" fill="var(--signal)" />
-      </svg>
-      <span className="text-[1.15rem] font-semibold tracking-tight">RingAround</span>
-    </span>
-  );
-}
-
 function StatusPill({ status }) {
   const map = {
     quote: ["Quote", "bg-sage-soft text-sage"],
@@ -238,30 +227,6 @@ function CallIcon({ status }) {
     <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${tone}`}>
       {status === "quote" ? <CheckGlyph /> : <PhoneGlyph />}
     </span>
-  );
-}
-
-function PhoneGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
-    </svg>
-  );
-}
-
-function CheckGlyph({ className = "h-4 w-4" }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function Arrow() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
   );
 }
 
