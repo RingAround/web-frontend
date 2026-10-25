@@ -64,14 +64,14 @@ const RELATED_FIELDS = {
   budgetMax: ["budgetMin"],
 };
 
-const cardClass = "rounded-[28px] border bg-white/70 p-6 transition-colors sm:p-8";
+const cardClass = "rounded-[28px] border bg-surface/70 p-6 transition-colors sm:p-8";
 const fieldBase =
-  "mt-2 w-full rounded-2xl border border-line bg-white py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-soft/55 focus:border-ink focus:ring-4 focus:ring-ink/5 aria-[invalid=true]:border-signal aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-signal/10";
+  "mt-2 w-full rounded-2xl border border-line bg-surface py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-soft/55 focus:border-ink focus:ring-4 focus:ring-ink/5 aria-[invalid=true]:border-signal aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-signal/10";
 const inputClass = `${fieldBase} px-4`;
 const focusRing = "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-signal/25";
-const cardChoiceClass = `group flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-white px-4 py-3.5 transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:shadow-[0_0_0_1px_var(--ink)] ${focusRing}`;
-const segmentClass = `flex cursor-pointer items-center justify-center rounded-2xl border border-line bg-white px-3 py-3 text-sm font-medium transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
-const chipClass = `inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-1.5 text-sm transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
+const cardChoiceClass = `group flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:shadow-[0_0_0_1px_var(--ink)] ${focusRing}`;
+const segmentClass = `flex cursor-pointer items-center justify-center rounded-2xl border border-line bg-surface px-3 py-3 text-sm font-medium transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
+const chipClass = `inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
 
 const noopSubscribe = () => () => {};
 
@@ -516,7 +516,7 @@ function RequestFormBody() {
                 id="field-timeZone"
                 value={timeZone}
                 onChange={(e) => update({ timeZone: e.target.value })}
-                className="rounded-full border border-line bg-white px-3 py-1.5 text-sm outline-none focus:border-ink focus:ring-4 focus:ring-ink/5"
+                className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm outline-none focus:border-ink focus:ring-4 focus:ring-ink/5"
               >
                 {timeZoneOptions.map((z) => (
                   <option key={z.id} value={z.id}>
@@ -645,7 +645,7 @@ function RequestFormBody() {
               <div className="flex flex-col items-stretch gap-2 sm:items-end">
                 <button
                   type="submit"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-signal px-7 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-signal px-7 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper"
                 >
                   Review request <Arrow />
                 </button>
@@ -702,10 +702,10 @@ function FormSkeleton() {
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
         <div className="space-y-5">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-48 animate-pulse rounded-[28px] border border-line bg-white/50" />
+            <div key={i} className="h-48 animate-pulse rounded-[28px] border border-line bg-surface/50" />
           ))}
         </div>
-        <div className="hidden h-96 animate-pulse rounded-[28px] border border-line bg-white/50 lg:block" />
+        <div className="hidden h-96 animate-pulse rounded-[28px] border border-line bg-surface/50 lg:block" />
       </div>
     </div>
   );
@@ -737,7 +737,7 @@ function RadioDot() {
   return (
     <span
       aria-hidden="true"
-      className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-ink/25 bg-white transition group-has-[:checked]:border-ink"
+      className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-ink/25 bg-surface transition group-has-[:checked]:border-ink"
     >
       <span className="h-2.5 w-2.5 scale-0 rounded-full bg-ink transition group-has-[:checked]:scale-100" />
     </span>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import RequestForm from "./request-form";
 
 export const metadata = {
@@ -18,9 +19,12 @@ export default function NewRequestPage() {
             <span className="hidden h-5 w-px bg-line sm:block" />
             <span className="hidden text-sm text-ink-soft sm:block">New quote request</span>
           </div>
-          <span className="rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft">
-            Demo · no calls
-          </span>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <span className="rounded-full border border-line bg-surface/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft">
+              Demo · no calls
+            </span>
+          </div>
         </div>
       </header>
       <main className="flex-1">

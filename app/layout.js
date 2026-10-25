@@ -1,4 +1,6 @@
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { InlineScript } from "@/components/inline-script";
+import { themeScript } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,7 +31,11 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <InlineScript html={themeScript} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

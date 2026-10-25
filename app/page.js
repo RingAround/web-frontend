@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Arrow, CheckGlyph, PhoneGlyph } from "@/components/icons";
 import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const ROLES = [
   "Property managers",
@@ -212,7 +213,7 @@ function StatusPill({ status }) {
 function CallIcon({ status }) {
   if (status === "calling") {
     return (
-      <span className="ring-pulse grid h-9 w-9 shrink-0 place-items-center rounded-full bg-signal text-paper">
+      <span className="ring-pulse grid h-9 w-9 shrink-0 place-items-center rounded-full bg-signal text-white">
         <PhoneGlyph />
       </span>
     );
@@ -243,11 +244,11 @@ function HeroBoard() {
         <circle cx="140" cy="480" r="3.5" fill="var(--ink)" fillOpacity="0.4" />
       </svg>
 
-      <div className="rise rounded-[28px] border border-line bg-white/80 p-2 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.35)] backdrop-blur" style={{ animationDelay: "0.25s" }}>
+      <div className="rise rounded-[28px] border border-line bg-surface/80 p-2 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.35)] backdrop-blur" style={{ animationDelay: "0.25s" }}>
         {/* request summary */}
-        <div className="rounded-[22px] bg-ink p-5 text-paper">
+        <div className="rounded-[22px] bg-night p-5 text-on-night">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-paper/50">Example request</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/50">Example request</span>
             <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-signal">
               <span className="h-1.5 w-1.5 rounded-full bg-signal" /> Live
             </span>
@@ -255,15 +256,15 @@ function HeroBoard() {
           <p className="mt-3 font-display text-2xl leading-tight">Turnover deep clean, 2-bed unit</p>
           <dl className="mt-4 grid grid-cols-3 gap-3 text-xs">
             <div>
-              <dt className="text-paper/45">Where</dt>
+              <dt className="text-on-night/45">Where</dt>
               <dd className="mt-0.5">Unit 4B, Pine St</dd>
             </div>
             <div>
-              <dt className="text-paper/45">When</dt>
+              <dt className="text-on-night/45">When</dt>
               <dd className="mt-0.5">By Friday AM</dd>
             </div>
             <div>
-              <dt className="text-paper/45">Budget</dt>
+              <dt className="text-on-night/45">Budget</dt>
               <dd className="mt-0.5">$250–$400</dd>
             </div>
           </dl>
@@ -304,7 +305,7 @@ function HeroBoard() {
       </div>
 
       {/* floating quote chip */}
-      <div className="rise absolute -bottom-6 -left-4 hidden rounded-2xl border border-line bg-white px-4 py-3 shadow-xl sm:block md:-left-10" style={{ animationDelay: "0.7s" }}>
+      <div className="rise absolute -bottom-6 -left-4 hidden rounded-2xl border border-line bg-surface px-4 py-3 shadow-xl sm:block md:-left-10" style={{ animationDelay: "0.7s" }}>
         <p className="font-mono text-[10px] uppercase tracking-wider text-sage">New quote</p>
         <p className="mt-0.5 font-display text-2xl leading-none">$320</p>
         <p className="mt-1 text-[11px] text-ink-soft">Brightline · supplies incl.</p>
@@ -329,9 +330,12 @@ export default function Home() {
             <a href="#pricing" className="hover:text-ink">Pricing</a>
             <a href="#faq" className="hover:text-ink">FAQ</a>
           </div>
-          <Link href="/sign-in" className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-signal">
-            Get early access <Arrow />
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/sign-in" className="group inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-signal hover:text-white">
+              Get early access <Arrow />
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -340,7 +344,7 @@ export default function Home() {
         <section className="grain relative">
           <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pb-24 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pb-32">
             <div>
-              <p className="rise inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+              <p className="rise inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
                 <span className="h-1.5 w-1.5 rounded-full bg-signal" />
                 AI quote agent for operators
               </p>
@@ -353,7 +357,7 @@ export default function Home() {
                 Describe the job once. RingAround finds local providers, calls them with your approval, and hands back quotes you can actually compare — so you can get back to running the property, the store, or the building.
               </p>
               <div className="rise mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.24s" }}>
-                <Link href="/sign-in" className="group inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink">
+                <Link href="/sign-in" className="group inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper">
                   Get early access <Arrow />
                 </Link>
                 <a href="#how" className="inline-flex items-center gap-2 rounded-full border border-ink/15 px-6 py-3.5 font-medium transition hover:border-ink">
@@ -377,11 +381,11 @@ export default function Home() {
         </section>
 
         {/* ROLES MARQUEE */}
-        <section aria-label="Built for" className="border-y border-line bg-ink py-5 text-paper">
+        <section aria-label="Built for" className="border-y border-line bg-night py-5 text-on-night">
           <div className="flex overflow-hidden">
             <div className="marquee flex shrink-0 items-center gap-10 whitespace-nowrap pr-10">
               {[...ROLES, ...ROLES].map((r, i) => (
-                <span key={i} className="flex items-center gap-10 font-display text-2xl italic text-paper/80">
+                <span key={i} className="flex items-center gap-10 font-display text-2xl italic text-on-night/80">
                   {r}
                   <span className="h-1.5 w-1.5 rounded-full bg-signal not-italic" />
                 </span>
@@ -416,7 +420,7 @@ export default function Home() {
         </section>
 
         {/* HOW IT WORKS */}
-        <section id="how" className="scroll-mt-16 bg-white/60">
+        <section id="how" className="scroll-mt-16 bg-surface/60">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 md:py-32">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div>
@@ -466,7 +470,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)]">
+            <div className="overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)]">
               <div className="flex items-center justify-between border-b border-line px-6 py-4">
                 <div>
                   <p className="text-sm font-semibold">Turnover deep clean · Unit 4B</p>
@@ -519,22 +523,22 @@ export default function Home() {
         </section>
 
         {/* WHO IT'S FOR */}
-        <section id="who" className="scroll-mt-16 bg-ink text-paper">
+        <section id="who" className="scroll-mt-16 bg-night text-on-night">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 md:py-32">
             <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">Who it’s for</p>
             <h2 className="mt-4 max-w-3xl font-display text-5xl leading-[1.02] tracking-tight md:text-6xl">
               Built for whoever gets handed <em className="text-signal">“can you get a few quotes?”</em>
             </h2>
-            <p className="mt-6 max-w-2xl text-paper/65">
+            <p className="mt-6 max-w-2xl text-on-night/65">
               Owners, property and facilities managers, office and operations leads, purchasing teams — if sourcing local vendors lands on your desk, RingAround takes the phone work off it.
             </p>
 
             <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {PERSONAS.map((p) => (
-                <article key={p.role} className="group flex flex-col rounded-3xl border border-paper/10 bg-paper/[0.04] p-7 transition hover:border-signal/60 hover:bg-paper/[0.07]">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-paper/50">{p.role}</p>
+                <article key={p.role} className="group flex flex-col rounded-3xl border border-on-night/10 bg-on-night/[0.04] p-7 transition hover:border-signal/60 hover:bg-on-night/[0.07]">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-on-night/50">{p.role}</p>
                   <p className="mt-5 flex-1 font-display text-[1.7rem] leading-snug">“{p.ask}”</p>
-                  <p className="mt-6 flex items-start gap-2 text-sm text-paper/70">
+                  <p className="mt-6 flex items-start gap-2 text-sm text-on-night/70">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-signal" />
                     {p.win}
                   </p>
@@ -542,7 +546,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-14 grid gap-6 border-t border-paper/10 pt-10 text-sm sm:grid-cols-3">
+            <div className="mt-14 grid gap-6 border-t border-on-night/10 pt-10 text-sm sm:grid-cols-3">
               {[
                 ["Multiple locations", "Save every building, store, or unit. Pick the address per request — your default stays put."],
                 ["Special instructions", "“After 6pm only,” “COI required,” “ask about supplies” — carried into every call."],
@@ -550,7 +554,7 @@ export default function Home() {
               ].map(([t, b]) => (
                 <div key={t}>
                   <p className="font-semibold">{t}</p>
-                  <p className="mt-2 leading-relaxed text-paper/60">{b}</p>
+                  <p className="mt-2 leading-relaxed text-on-night/60">{b}</p>
                 </div>
               ))}
             </div>
@@ -577,7 +581,7 @@ export default function Home() {
         </section>
 
         {/* PRICING */}
-        <section id="pricing" className="scroll-mt-16 bg-white/60">
+        <section id="pricing" className="scroll-mt-16 bg-surface/60">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 md:py-32">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div>
@@ -589,27 +593,27 @@ export default function Home() {
               <p className="max-w-sm text-ink-soft">Twenty dollars covers up to two hundred quotes a month — about a dime a quote when you use them all.</p>
             </div>
 
-            <div className="mt-16 grid overflow-hidden rounded-[32px] border border-line bg-white shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)] lg:grid-cols-[1fr_1.15fr]">
-              <div className="relative overflow-hidden bg-ink p-8 text-paper sm:p-12">
-                <svg viewBox="0 0 400 400" className="pointer-events-none absolute -right-28 -top-28 w-96 text-paper" aria-hidden="true">
+            <div className="mt-16 grid overflow-hidden rounded-[32px] border border-line bg-surface shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)] lg:grid-cols-[1fr_1.15fr]">
+              <div className="relative overflow-hidden bg-night p-8 text-on-night sm:p-12">
+                <svg viewBox="0 0 400 400" className="pointer-events-none absolute -right-28 -top-28 w-96 text-on-night" aria-hidden="true">
                   {[70, 120, 170].map((r) => (
                     <circle key={r} cx="200" cy="200" r={r} fill="none" stroke="currentColor" strokeOpacity="0.1" />
                   ))}
                 </svg>
-                <p className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-paper/50">Monthly plan</p>
+                <p className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-on-night/50">Monthly plan</p>
                 <p className="relative mt-6 flex items-end gap-2">
                   <span className="font-display text-[7rem] leading-[0.8]">$20</span>
-                  <span className="pb-1 text-paper/60">/ month</span>
+                  <span className="pb-1 text-on-night/60">/ month</span>
                 </p>
                 <p className="relative mt-8 text-xl">
                   Up to <span className="text-signal">200 quotes</span> every month
                 </p>
                 <div className="relative mt-6 grid w-fit grid-cols-[repeat(20,0.375rem)] gap-1.5" aria-hidden="true">
                   {Array.from({ length: 200 }, (_, i) => (
-                    <span key={i} className="h-1.5 w-1.5 rounded-full bg-paper/25" />
+                    <span key={i} className="h-1.5 w-1.5 rounded-full bg-on-night/25" />
                   ))}
                 </div>
-                <p className="relative mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-paper/45">≈ 10¢ a quote at full use</p>
+                <p className="relative mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-on-night/45">≈ 10¢ a quote at full use</p>
                 <Link href="/sign-in" className="group relative mt-10 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white transition hover:bg-paper hover:text-ink">
                   Get early access <Arrow />
                 </Link>
@@ -670,7 +674,7 @@ export default function Home() {
               <p className="mx-auto mt-6 max-w-xl text-white/85">
                 $20 a month for up to 200 quotes. Join early access and hand off the phone work.
               </p>
-              <Link href="/sign-in" className="group mt-10 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-4 font-medium text-paper transition hover:bg-white hover:text-ink">
+              <Link href="/sign-in" className="group mt-10 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-4 font-medium text-paper transition hover:bg-surface hover:text-ink">
                 Get early access <Arrow />
               </Link>
             </div>
