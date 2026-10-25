@@ -102,7 +102,7 @@ const NEXT_STEPS = [
 ];
 
 // Read-back of a validated request before anything is sent.
-export function ReviewPanel({ request, view, assumptions, onEdit }) {
+export function ReviewPanel({ request, view, assumptions, onEdit, onSend }) {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-10 sm:px-6 md:pt-14">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">Review</p>
@@ -181,12 +181,12 @@ export function ReviewPanel({ request, view, assumptions, onEdit }) {
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <button
             type="button"
-            disabled
-            className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-ink/10 px-7 py-3.5 font-medium text-ink/45"
+            onClick={onSend}
+            className="group inline-flex items-center justify-center gap-2 rounded-full bg-signal px-7 py-3.5 font-medium text-white shadow-[0_10px_30px_-10px_var(--signal)] transition hover:bg-ink hover:text-paper"
           >
-            Find providers
+            Send request <Arrow />
           </button>
-          <p className="text-xs text-ink-soft">Provider search isn’t connected yet — that’s the next step.</p>
+          <p className="text-xs text-ink-soft">You’ll approve the provider shortlist before any calls go out.</p>
         </div>
       </div>
     </div>
