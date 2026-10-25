@@ -13,7 +13,7 @@ import {
   describeTiming,
   makeRequestSchema,
   timeZoneLabel,
-  toISODate,
+  todayIn,
 } from "@/lib/request";
 import { SERVICE_CATEGORIES, categoryLabel, suggestCategory } from "@/lib/service-categories";
 import { RequestSummary, ReviewPanel } from "./request-summary";
@@ -41,6 +41,7 @@ const EMPTY_FORM = {
 // Schema issue path -> form field. Inputs use the id `field-<name>`.
 const FIELD_FOR_PATH = {
   serviceDescription: "service",
+  serviceCategory: "service",
   "location.formattedAddress": "otherAddress",
   "location.label": "otherLabel",
   timing: "timing",
@@ -83,10 +84,22 @@ function useBrowserValue(read) {
 function readDraft() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null");
-    if (!saved) return EMPTY_FORM;
-    const draft = { ...EMPTY_FORM, ...saved };
-    const knownLocation = draft.locationId === "other" || DEMO_LOCATIONS.some((l) => l.id === draft.locationId);
-    return knownLocation ? draft : { ...draft, locationId: DEFAULT_LOCATION_ID };
+    if (!saved || typeof saved !== "object") return EMPTY_FORM;
+    // Keep only fields the form knows, with the right types and ids that still
+    // exist; a stale or hand-edited draft could otherwise submit unknown values.
+    const draft = Object.fromEntries(
+      Object.entries(EMPTY_FORM).map(([key, fallback]) => [
+        key,
+        typeof fallback === "string" && typeof saved[key] !== "string" ? fallback : (saved[key] ?? fallback),
+      ]),
+    );
+    const known = (value, options) => options.some((o) => o.id === value);
+    if (!known(draft.category, SERVICE_CATEGORIES)) draft.category = null;
+    if (draft.locationId !== "other" && !known(draft.locationId, DEMO_LOCATIONS)) draft.locationId = DEFAULT_LOCATION_ID;
+    if (!known(draft.timing, TIMING_OPTIONS)) draft.timing = null;
+    if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = EMPTY_FORM.arrival;
+    if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = EMPTY_FORM.budget;
+    return draft;
   } catch {
     return EMPTY_FORM;
   }
@@ -139,7 +152,6 @@ function RequestFormBody() {
   const [saveState, setSaveState] = useState("idle");
   const [review, setReview] = useState(null);
   const saveTimer = useRef(null);
-  const today = useBrowserValue(() => toISODate(new Date()));
   const browserTimeZone = useBrowserValue(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const suggested = suggestCategory(form.service);
@@ -151,28 +163,32 @@ function RequestFormBody() {
     : savedLocation
       ? `from ${savedLocation.label}`
       : "from your browser";
+  // Today where the job is, re-read every render so it can't go stale overnight.
+  const today = useBrowserValue(() => todayIn(timeZone));
   const timeZoneOptions = TIME_ZONES.some((z) => z.id === timeZone)
     ? TIME_ZONES
     : [...TIME_ZONES, { id: timeZone, label: timeZone }];
 
   const timing = timingFromForm(form);
   const budget = budgetFromForm(form);
+  const timingText = describeTiming(timing);
+  const budgetText = describeBudget(budget);
   const view = {
     service: form.service.trim(),
     category: categoryId ? { label: categoryLabel(categoryId), source: form.category ? "chosen" : "suggested" } : null,
     location: savedLocation
       ? { label: savedLocation.label, address: savedLocation.address, isDefault: savedLocation.isDefault }
       : { label: form.otherLabel.trim() || "Another address", address: form.otherAddress.trim(), isDefault: false },
-    timing: describeTiming(timing),
+    timing: timingText,
     arrival: describeArrival(form.arrival),
     timeZone: { id: timeZone, label: timeZoneLabel(timeZone), source: timeZoneSource },
-    budget: describeBudget(budget),
+    budget: budgetText,
     instructions: form.instructions.trim(),
     answered: [
       form.service.trim() !== "",
       savedLocation !== null || form.otherAddress.trim() !== "",
-      describeTiming(timing) !== null && (timing.mode !== "range" || Boolean(timing.end)),
-      describeBudget(budget) !== null,
+      timingText !== null && (timing.mode !== "range" || Boolean(timing.end)),
+      budgetText !== null,
     ],
   };
 
@@ -223,7 +239,7 @@ function RequestFormBody() {
       budget,
       specialInstructions: form.instructions,
     };
-    const result = makeRequestSchema(today).safeParse(request);
+    const result = makeRequestSchema(todayIn(timeZone)).safeParse(request);
     if (!result.success) {
       const next = {};
       for (const issue of result.error.issues) {
