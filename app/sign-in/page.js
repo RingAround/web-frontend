@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { auth, isAuthConfigured } from "@/auth";
 import { signInWithGoogle, signOutOfAccount } from "./actions";
 import SubmitButton from "./submit-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata = {
   title: "Sign in — RingAround",
@@ -45,7 +46,7 @@ async function SignInCard({ searchParams }) {
 
 function SignInCardContent({ user, configured, error, loading = false }) {
   return (
-    <div className="rise rounded-[28px] border border-line bg-white/90 p-7 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.25)] backdrop-blur sm:p-10" style={{ animationDelay: "0.12s" }} aria-busy={loading}>
+    <div className="rise rounded-[28px] border border-line bg-surface/90 p-7 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.25)] backdrop-blur sm:p-10" style={{ animationDelay: "0.12s" }} aria-busy={loading}>
       <span className={`mb-7 grid h-12 w-12 place-items-center rounded-2xl ${user ? "bg-sage-soft text-sage" : "bg-signal-soft text-signal"}`}>
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           {user ? <path d="m5 12 4 4L19 6" /> : <><rect x="5" y="10" width="14" height="11" rx="3" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></>}
@@ -106,15 +107,18 @@ export default function SignInPage({ searchParams }) {
             </svg>
             <span className="text-[1.15rem] font-semibold tracking-tight">RingAround</span>
           </Link>
-          <Link href="/" className="rounded-full px-3 py-2 text-sm text-ink-soft transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal">
-            <span aria-hidden="true">← </span>Back to home
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/" className="rounded-full px-3 py-2 text-sm text-ink-soft transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal">
+              <span aria-hidden="true">← </span>Back to home
+            </Link>
+          </div>
         </nav>
       </header>
 
       <main className="relative mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
         <section className="rise">
-          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
+          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft">
             <span className="h-1.5 w-1.5 rounded-full bg-signal" />Your next step
           </p>
           <h1 className="mt-6 max-w-xl font-display text-[3.4rem] leading-[0.98] tracking-tight sm:text-7xl">
