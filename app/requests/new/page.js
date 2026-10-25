@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { getSession } from "@/auth";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,6 +13,9 @@ export const metadata = {
 };
 
 async function AuthenticatedRequest() {
+  // Check the session per request. Without this the page is prerendered at
+  // build time, where auth isn't configured, and always redirects to /sign-in.
+  await connection();
   const session = await getSession();
   if (!session?.user?.id) redirect("/sign-in");
   return <ProfileGate user={{ id: session.user.id, name: session.user.name || "" }} />;
