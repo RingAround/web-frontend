@@ -21,13 +21,15 @@ export default async function CheckoutPage({ params }) {
   // Accounts on ALLOWED_EMAILS are already approved: no plan or payment step.
   await connection();
   const session = await getSession();
-  if (canStartCalls(session?.user?.email)) redirect("/requests/new");
+  // The application is saved to the signed-in account, so checkout needs one.
+  if (!session?.user?.id) redirect(`/sign-in?next=${encodeURIComponent(`/checkout/${plan.id}`)}`);
+  if (canStartCalls(session.user.email)) redirect("/requests/new");
 
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader label="Checkout" />
       <main className="flex-1">
-        <CheckoutForm initialPlanId={plan.id} />
+        <CheckoutForm initialPlanId={plan.id} defaults={{ name: session.user.name || "", email: session.user.email || "" }} />
       </main>
     </div>
   );

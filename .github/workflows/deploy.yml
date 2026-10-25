@@ -28,7 +28,7 @@
 # NOT at repo level, so every job that touches Cloudflare must declare
 # `environment: prod` — without it they all resolve to empty strings:
 #   secret   CF_API_TOKEN             Cloudflare API token: Workers Scripts edit,
-#                                     Workers R2 Storage edit, and for the
+#                                     Workers R2 Storage edit, D1 edit, and for the
 #                                     ringaround.me zone, Workers Routes + DNS edit
 #   variable CF_ACCOUNT_ID            Cloudflare account ID (also in wrangler.jsonc)
 #   variable CF_S3_ACCESS_KEY_ID      R2 S3 API key pair, for the cache upload
@@ -146,6 +146,15 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
         run: npx wrangler r2 bucket info "$BUCKET" > /dev/null 2>&1 || npx wrangler r2 bucket create "$BUCKET"
 
+      # Before the deploy, so new code never runs against an older schema.
+      # Migrations must therefore be additive: the Worker still serving during
+      # this step is the previous version.
+      - name: Apply database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+        run: npx wrangler d1 migrations apply DB --remote
+
       # Secrets are additive: a deploy never deletes one, so leaving these unset
       # in GitHub keeps whatever was put on the Worker by hand. Each group is
       # uploaded only when complete, so a half-configured feature stays off.
@@ -257,6 +266,13 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
         run: npx wrangler r2 bucket info "$BUCKET" > /dev/null 2>&1 || npx wrangler r2 bucket create "$BUCKET"
+
+      # The preview database is shared by every PR and holds no real user data.
+      - name: Apply database migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+        run: npx wrangler d1 migrations apply DB --remote --env preview
 
       # --name overrides the preview environment's Worker name so each PR
       # publishes its own. Everything else still comes from `env.preview` in

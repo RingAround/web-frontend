@@ -1,3 +1,10 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Gives `next dev` the bindings from wrangler.jsonc (the D1 database `DB`),
+// backed by local copies under .wrangler/. Create the local tables once with
+// `npm run db:migrate:local`.
+initOpenNextCloudflareForDev();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */

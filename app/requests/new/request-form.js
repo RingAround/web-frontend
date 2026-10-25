@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Arrow } from "@/components/icons";
 import { FieldError, RadioDot, cardChoiceClass, fieldBase, focusRing, inputClass } from "@/components/form-parts";
-import { PENDING_REQUEST_KEY, REQUEST_DRAFT_KEY, readAccount } from "@/lib/account";
+import { PENDING_REQUEST_KEY, REQUEST_DRAFT_KEY } from "@/lib/account";
 import {
   ARRIVAL_WINDOWS,
   INSTRUCTIONS_LIMIT,
@@ -17,11 +17,10 @@ import {
   timeZoneLabel,
   todayIn,
 } from "@/lib/request";
-import { addLocation, readLocations, writeLocations } from "@/lib/saved-locations";
 import { SERVICE_CATEGORIES, categoryLabel, suggestCategory } from "@/lib/service-categories";
 import { useBrowserValue } from "@/lib/use-browser-value";
 import { RequestSummary, ReviewPanel } from "./request-summary";
-import { sendRequest } from "./actions";
+import { saveLocationAction, sendRequest } from "./actions";
 
 const DRAFT_KEY = REQUEST_DRAFT_KEY;
 
@@ -142,23 +141,29 @@ function listAssumptions(view, form, savedNow) {
   return notes;
 }
 
-export default function RequestForm({ profile, userId, canCall }) {
+export default function RequestForm({ profile, initialLocations, userId, canCall, hasApplication }) {
   const inBrowser = useBrowserValue(() => true);
   const profileLocation = profile
     ? { id: "profile-default", label: "Default address", address: profile.defaultAddress, isDefault: true }
     : null;
   const draftKey = userId ? `${DRAFT_KEY}:${encodeURIComponent(userId)}` : DRAFT_KEY;
   return inBrowser ? (
-    <RequestFormBody profileLocation={profileLocation} userId={userId} draftKey={draftKey} profile={profile} canCall={canCall} />
+    <RequestFormBody
+      profileLocation={profileLocation}
+      initialLocations={initialLocations}
+      draftKey={draftKey}
+      canCall={canCall}
+      hasApplication={hasApplication}
+    />
   ) : (
     <FormSkeleton />
   );
 }
 
-function RequestFormBody({ profileLocation, userId, draftKey, profile, canCall }) {
+function RequestFormBody({ profileLocation, initialLocations, draftKey, canCall, hasApplication }) {
   const router = useRouter();
   // The profile address comes first as the default; addresses saved from this form follow.
-  const [savedLocations, setSavedLocations] = useState(() => readLocations(userId));
+  const [savedLocations, setSavedLocations] = useState(initialLocations);
   const locations = profileLocation ? [profileLocation, ...savedLocations] : savedLocations;
   const [form, setForm] = useState(() => readDraft(locations, draftKey));
   const [errors, setErrors] = useState({});
@@ -238,7 +243,7 @@ function RequestFormBody({ profileLocation, userId, draftKey, profile, canCall }
     setSaveState("idle");
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const request = {
       serviceDescription: form.service,
@@ -273,14 +278,21 @@ function RequestFormBody({ profileLocation, userId, draftKey, profile, canCall }
       const match = locations.find((l) => l.address.toLowerCase() === address.toLowerCase());
       let location = match;
       if (!match) {
-        const saved = addLocation(savedLocations, { label: result.data.location.label, address, timeZone });
-        writeLocations(userId, saved.locations);
-        setSavedLocations(saved.locations);
-        location = saved.location;
-        savedNow = saved.added;
+        const saved = await saveLocationAction({ label: result.data.location.label, address, timeZone });
+        if (saved.location) {
+          setSavedLocations((current) =>
+            current.some((l) => l.id === saved.location.id) ? current : [...current, saved.location],
+          );
+          location = saved.location;
+          savedNow = saved.added;
+        }
       }
-      update({ locationId: location.id, otherAddress: "", otherLabel: "" });
-      reviewView = { ...view, location: { label: location.label, address: location.address, isDefault: location.isDefault } };
+      // Saving the address is a convenience: if it failed, the request still
+      // goes ahead with the address as typed.
+      if (location) {
+        update({ locationId: location.id, otherAddress: "", otherLabel: "" });
+        reviewView = { ...view, location: { label: location.label, address: location.address, isDefault: location.isDefault } };
+      }
     }
     setReview({ request: result.data, view: reviewView, assumptions: listAssumptions(reviewView, form, savedNow) });
     window.scrollTo({ top: 0 });
@@ -290,8 +302,9 @@ function RequestFormBody({ profileLocation, userId, draftKey, profile, canCall }
   // goes to checkout or the account review page, and the draft stays saved.
   // Resolves with an error message, or navigates away.
   async function send() {
+    let applied = hasApplication;
     if (canCall) {
-      const result = await sendRequest({ request: review.request, profile });
+      const result = await sendRequest({ request: review.request });
       if (result.sessionId) {
         try {
           window.localStorage.removeItem(draftKey);
@@ -302,13 +315,14 @@ function RequestFormBody({ profileLocation, userId, draftKey, profile, canCall }
         return null;
       }
       if (!result.needsAccount) return result.error;
+      applied = result.hasApplication;
     }
     try {
       window.sessionStorage.setItem(PENDING_REQUEST_KEY, "1");
     } catch {
       // Storage blocked: the draft itself is still saved.
     }
-    router.push(readAccount() ? "/account/pending" : "/checkout/starter");
+    router.push(applied ? "/account/pending" : "/checkout/starter");
     return null;
   }
 

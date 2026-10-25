@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getSession } from "@/auth";
 import { canStartCalls } from "@/lib/agent";
+import { getApplication, getProfile, listLocations } from "@/lib/db";
 import { AppHeader } from "@/components/app-header";
 import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
 import ProfileGate from "./profile-gate";
@@ -17,10 +18,19 @@ async function AuthenticatedRequest() {
   await connection();
   const session = await getSession();
   if (!session?.user?.id) redirect("/sign-in");
+  const userId = session.user.id;
+  const [profile, locations, application] = await Promise.all([
+    getProfile(userId),
+    listLocations(userId),
+    getApplication(userId),
+  ]);
   return (
     <ProfileGate
-      user={{ id: session.user.id, name: session.user.name || "" }}
+      user={{ id: userId, name: session.user.name || "" }}
       canCall={canStartCalls(session.user.email)}
+      hasApplication={Boolean(application)}
+      initialProfile={profile}
+      initialLocations={locations}
     />
   );
 }

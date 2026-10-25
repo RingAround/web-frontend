@@ -14,7 +14,7 @@ Everything lives on the `prod` GitHub Environment (Settings → Environments →
 
 | Name | Kind | Purpose |
 | --- | --- | --- |
-| `CF_API_TOKEN` | secret | Cloudflare API token with Workers Scripts edit and Workers R2 Storage edit on the account, plus Workers Routes edit and DNS edit on the `ringaround.me` zone (for the custom domain) |
+| `CF_API_TOKEN` | secret | Cloudflare API token with Workers Scripts edit, Workers R2 Storage edit and D1 edit on the account, plus Workers Routes edit and DNS edit on the `ringaround.me` zone (for the custom domain) |
 | `CF_ACCOUNT_ID` | variable | Cloudflare account ID |
 | `CF_S3_ACCESS_KEY_ID` | variable | R2 S3 API access key, used to upload the incremental cache |
 | `CF_S3_SECRET_ACCESS_KEY` | secret | Its secret key |
@@ -44,6 +44,19 @@ npx wrangler secret put AUTH_GOOGLE_SECRET
 ```
 
 In Google Cloud Console, add `https://ringaround.me` as an authorized JavaScript origin and `https://ringaround.me/api/auth/callback/google` as a redirect URI. Previews have no OAuth credentials, so sign-in shows as unavailable there.
+
+## User data (D1)
+
+Profiles, saved addresses, account applications and the list of sent requests live in Cloudflare D1, bound as `DB`:
+
+- `ringaround`: production
+- `ringaround-preview`: shared by every PR preview, so PR code never touches real user data
+
+The schema is in `migrations/`, and each deploy applies pending migrations before publishing the Worker. Because the old Worker keeps serving while a migration runs, migrations must be additive: add columns and tables, and don't rename or drop ones the current code still uses. To add one, run `npx wrangler d1 migrations create DB <name>`.
+
+Unsent form drafts and the theme choice stay in the browser, since they belong to one device. Profiles, addresses and applications that older versions kept in the browser are moved to D1 the first time a user visits after this change.
+
+For `npm run dev`, create the local tables once with `npm run db:migrate:local`.
 
 ## Running the Workers build locally
 

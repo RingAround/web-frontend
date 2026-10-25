@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getSession, isAuthConfigured } from "@/auth";
 import { signInWithGoogle, signOutOfAccount } from "./actions";
+import { safeNextPath } from "@/lib/safe-path";
 import SubmitButton from "./submit-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -37,17 +38,18 @@ function errorMessage(error) {
 }
 
 async function SignInCard({ searchParams }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  const nextPath = safeNextPath(next);
   const configured = isAuthConfigured();
   const user = (await getSession())?.user;
 
-  // Signed-in visitors go straight to the app.
-  if (user) redirect("/requests/new");
+  // Signed-in visitors go straight on to where they were headed.
+  if (user) redirect(nextPath);
 
-  return <SignInCardContent user={user} configured={configured} error={error} />;
+  return <SignInCardContent user={user} configured={configured} error={error} nextPath={nextPath} />;
 }
 
-function SignInCardContent({ user, configured, error, loading = false }) {
+function SignInCardContent({ user, configured, error, nextPath, loading = false }) {
   return (
     <div className="rise rounded-[28px] border border-line bg-surface/90 p-7 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.25)] backdrop-blur sm:p-10" style={{ animationDelay: "0.12s" }} aria-busy={loading}>
       <span className={`mb-7 grid h-12 w-12 place-items-center rounded-2xl ${user ? "bg-sage-soft text-sage" : "bg-signal-soft text-signal"}`}>
@@ -83,6 +85,7 @@ function SignInCardContent({ user, configured, error, loading = false }) {
             </p>
           )}
           <form action={signInWithGoogle} className="mt-8">
+            <input type="hidden" name="next" value={nextPath ?? ""} />
             <SubmitButton pendingLabel="Connecting to Google…" disabled={!configured}>
               <GoogleIcon />Continue with Google
             </SubmitButton>

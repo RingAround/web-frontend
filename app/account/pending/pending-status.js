@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Arrow, CheckGlyph } from "@/components/icons";
-import { formatSubmittedDate, hasRequestDraft, readAccount } from "@/lib/account";
+import { clearBrowserAccount, formatSubmittedDate, hasRequestDraft, readAccount } from "@/lib/account";
+import { importBrowserApplication } from "../actions";
 import { findPlan } from "@/lib/plans";
 import { useBrowserValue } from "@/lib/use-browser-value";
 
@@ -13,7 +14,7 @@ const NEXT_STEPS = [
   { title: "Send your first request", body: "Approve the provider shortlist, and the agent starts calling." },
 ];
 
-export function PendingStatus() {
+export function PendingStatus({ initialApplication }) {
   const inBrowser = useBrowserValue(() => true);
   if (!inBrowser) {
     return (
@@ -22,12 +23,42 @@ export function PendingStatus() {
       </div>
     );
   }
-  return <PendingBody />;
+  return <PendingBody initialApplication={initialApplication} />;
 }
 
-function PendingBody() {
-  const [account] = useState(readAccount);
+function PendingBody({ initialApplication }) {
+  const [account, setAccount] = useState(initialApplication);
   const [draftWaiting] = useState(hasRequestDraft);
+  // Only when the server has no application: one made in this browser before
+  // applications were stored on the server is moved up once, then cleared here.
+  const [browserAccount] = useState(() => (initialApplication ? null : readAccount()));
+  const [importing, setImporting] = useState(Boolean(browserAccount));
+
+  useEffect(() => {
+    if (!browserAccount) return;
+    let cancelled = false;
+    importBrowserApplication(browserAccount)
+      .then((saved) => {
+        if (cancelled || !saved) return;
+        setAccount(saved);
+        clearBrowserAccount();
+      })
+      .catch(() => {
+        // Leave the browser copy to retry next visit.
+      })
+      .finally(() => !cancelled && setImporting(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [browserAccount]);
+
+  if (importing) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pt-14 sm:px-6" aria-busy="true">
+        <div className="h-72 animate-pulse rounded-[28px] border border-line bg-surface/50" />
+      </div>
+    );
+  }
 
   if (!account) {
     return (
