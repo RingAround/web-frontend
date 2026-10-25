@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Arrow, CheckGlyph } from "@/components/icons";
 import { FieldError, RadioDot, cardChoiceClass, inputClass } from "@/components/form-parts";
-import { hasRequestDraft, saveAccount } from "@/lib/account";
+import { hasRequestDraft } from "@/lib/account";
+import { submitApplication } from "@/app/account/actions";
 import { PLANS, PLAN_FEATURES, findPlan } from "@/lib/plans";
 import { useBrowserValue } from "@/lib/use-browser-value";
 
@@ -77,10 +78,10 @@ function validate(details, card, now) {
   return errors;
 }
 
-export default function CheckoutForm({ initialPlanId }) {
+export default function CheckoutForm({ initialPlanId, defaults }) {
   const router = useRouter();
   const [planId, setPlanId] = useState(initialPlanId);
-  const [details, setDetails] = useState(EMPTY_DETAILS);
+  const [details, setDetails] = useState(() => ({ ...EMPTY_DETAILS, ...defaults }));
   const [card, setCard] = useState(EMPTY_CARD);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -120,18 +121,25 @@ export default function CheckoutForm({ initialPlanId }) {
     }
     setErrors({});
     setSubmitting(true);
-    saveAccount({
+    // Card fields stay in this component: only contact details and the plan
+    // are sent.
+    submitApplication({
       name: details.name.trim(),
       email: details.email.trim(),
       company: details.company.trim(),
       role: details.role,
       plan: planId,
-      submittedAt: new Date().toISOString(),
-    });
-    window.setTimeout(() => {
-      setCard(EMPTY_CARD);
-      router.push("/account/pending");
-    }, 900);
+    })
+      .catch(() => ({ error: "We couldn’t save your application. Try again in a minute." }))
+      .then((result) => {
+        if (result.error) {
+          setErrors({ form: result.error });
+          setSubmitting(false);
+          return;
+        }
+        setCard(EMPTY_CARD);
+        router.push("/account/pending");
+      });
   }
 
   const describedBy = (field) => (errors[field] ? `field-${field}-error` : undefined);

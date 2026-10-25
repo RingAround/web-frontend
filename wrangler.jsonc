@@ -24,6 +24,16 @@
 		// OpenNext incremental cache. See https://opennext.js.org/cloudflare/caching
 		{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "ringaround-opennext-cache" }
 	],
+	// User data (profiles, saved addresses, account applications, requests).
+	// Schema lives in migrations/; CI applies it before each deploy.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "ringaround",
+			"database_id": "34ea736b-51b9-418c-b39e-a969617dc8f8",
+			"migrations_dir": "migrations"
+		}
+	],
 	"observability": { "enabled": true },
 
 	"env": {
@@ -38,6 +48,15 @@
 			"preview_urls": false,
 			"r2_buckets": [
 				{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "ringaround-preview-opennext-cache" }
+			],
+			// A separate database, so PR code never reads or writes real user data.
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "ringaround-preview",
+					"database_id": "9f053a1c-9fbf-4624-9506-b33dd7acfcf6",
+					"migrations_dir": "migrations"
+				}
 			],
 			"observability": { "enabled": true }
 		}
