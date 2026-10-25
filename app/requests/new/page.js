@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { auth, isAuthConfigured } from "@/auth";
+import { connection } from "next/server";
+import { getSession } from "@/auth";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SignOutButton } from "@/components/sign-out-button";
-import { signOutOfAccount } from "@/app/sign-in/actions";
+import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
 import ProfileGate from "./profile-gate";
 
 export const metadata = {
@@ -13,7 +13,10 @@ export const metadata = {
 };
 
 async function AuthenticatedRequest() {
-  const session = isAuthConfigured() ? await auth() : null;
+  // Check the session per request. Without this the page is prerendered at
+  // build time, where auth isn't configured, and always redirects to /sign-in.
+  await connection();
+  const session = await getSession();
   if (!session?.user?.id) redirect("/sign-in");
   return <ProfileGate user={{ id: session.user.id, name: session.user.name || "" }} />;
 }
@@ -32,9 +35,9 @@ export default function NewRequestPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <form action={signOutOfAccount}>
-              <SignOutButton className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-full border border-line px-3 py-2 text-sm font-medium text-ink transition hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal" />
-            </form>
+            <Suspense fallback={<AccountNavigationFallback />}>
+              <AccountNavigation />
+            </Suspense>
           </div>
         </div>
       </header>

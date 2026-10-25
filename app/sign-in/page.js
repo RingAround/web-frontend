@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { auth, isAuthConfigured } from "@/auth";
+import { getSession, isAuthConfigured } from "@/auth";
 import { signInWithGoogle, signOutOfAccount } from "./actions";
 import SubmitButton from "./submit-button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -39,10 +39,11 @@ function errorMessage(error) {
 async function SignInCard({ searchParams }) {
   const { error } = await searchParams;
   const configured = isAuthConfigured();
-  const session = configured ? await auth() : null;
-  const user = session?.user;
+  const user = (await getSession())?.user;
 
-  if (user) redirect("/");
+  // Signed-in visitors go straight to the app, so every "Get early access"
+  // link on the home page works for them too.
+  if (user) redirect("/requests/new");
 
   return <SignInCardContent user={user} configured={configured} error={error} />;
 }
