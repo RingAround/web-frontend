@@ -15,11 +15,24 @@ async function isSignedIn() {
   return Boolean((await getSession())?.user);
 }
 
-function AccountAction({ signedIn }) {
+// Short label on phones, where the header has the least room.
+function RequestsLink({ display = "inline-flex" }) {
+  return (
+    <Link href="/requests" className={`${buttonClass.replace("inline-flex ", "")} ${display}`}>
+      <span className="sm:hidden">Requests</span>
+      <span className="hidden sm:inline">Your requests</span>
+    </Link>
+  );
+}
+
+function AccountAction({ signedIn, requestsLinkDisplay }) {
   return signedIn ? (
-    <form action={signOutOfAccount}>
-      <SignOutButton className={buttonClass} />
-    </form>
+    <>
+      <RequestsLink display={requestsLinkDisplay} />
+      <form action={signOutOfAccount}>
+        <SignOutButton className={buttonClass} />
+      </form>
+    </>
   ) : (
     <Link href="/sign-in" className={buttonClass}>Sign in</Link>
   );
@@ -46,7 +59,8 @@ export async function AuthNavigation() {
       <Link href={signedIn ? "/requests/new" : "/#pricing"} className={requestButtonClass}>
         {signedIn ? "New request" : "Get started"} <Arrow />
       </Link>
-      <AccountAction signedIn={signedIn} />
+      {/* The New request button already crowds a phone-width header. */}
+      <AccountAction signedIn={signedIn} requestsLinkDisplay="hidden sm:inline-flex" />
     </>
   );
 }
