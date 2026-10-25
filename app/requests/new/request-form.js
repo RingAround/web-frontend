@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Arrow } from "@/components/icons";
-import { DEFAULT_LOCATION_ID, DEMO_LOCATIONS } from "@/lib/demo-locations";
+import { FieldError, RadioDot, cardChoiceClass, fieldBase, focusRing, inputClass } from "@/components/form-parts";
+import { PENDING_REQUEST_KEY, REQUEST_DRAFT_KEY, readAccount } from "@/lib/account";
 import {
   ARRIVAL_WINDOWS,
   INSTRUCTIONS_LIMIT,
@@ -15,17 +17,20 @@ import {
   timeZoneLabel,
   todayIn,
 } from "@/lib/request";
+import { addLocation, readLocations, writeLocations } from "@/lib/saved-locations";
 import { SERVICE_CATEGORIES, categoryLabel, suggestCategory } from "@/lib/service-categories";
+import { useBrowserValue } from "@/lib/use-browser-value";
 import { RequestSummary, ReviewPanel } from "./request-summary";
 
-const DRAFT_KEY = "ringaround:request-draft:v1";
+const DRAFT_KEY = REQUEST_DRAFT_KEY;
 
 const EMPTY_FORM = {
   service: "",
   category: null, // null = use the suggestion from the description
-  locationId: DEFAULT_LOCATION_ID, // a saved location id, or "other"
+  locationId: null, // a saved location id, "other" for a new address, or null for the default
   otherAddress: "",
   otherLabel: "",
+  saveLocation: true,
   timing: null,
   date: "",
   rangeStart: "",
@@ -66,22 +71,10 @@ const RELATED_FIELDS = {
 };
 
 const cardClass = "rounded-[28px] border bg-surface/70 p-6 transition-colors sm:p-8";
-const fieldBase =
-  "mt-2 w-full rounded-2xl border border-line bg-surface py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-soft/55 focus:border-ink focus:ring-4 focus:ring-ink/5 aria-[invalid=true]:border-signal aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-signal/10";
-const inputClass = `${fieldBase} px-4`;
-const focusRing = "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-signal/25";
-const cardChoiceClass = `group flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:shadow-[0_0_0_1px_var(--ink)] ${focusRing}`;
 const segmentClass = `flex cursor-pointer items-center justify-center rounded-2xl border border-line bg-surface px-3 py-3 text-sm font-medium transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
 const chipClass = `inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
 
-const noopSubscribe = () => () => {};
-
-// A value that only exists in the browser; null while server-rendering and hydrating.
-function useBrowserValue(read) {
-  return useSyncExternalStore(noopSubscribe, read, () => null);
-}
-
-function readDraft() {
+function readDraft(locations) {
   try {
     const saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null");
     if (!saved || typeof saved !== "object") return EMPTY_FORM;
@@ -95,7 +88,8 @@ function readDraft() {
     );
     const known = (value, options) => options.some((o) => o.id === value);
     if (!known(draft.category, SERVICE_CATEGORIES)) draft.category = null;
-    if (draft.locationId !== "other" && !known(draft.locationId, DEMO_LOCATIONS)) draft.locationId = DEFAULT_LOCATION_ID;
+    if (draft.locationId !== "other" && !known(draft.locationId, locations)) draft.locationId = null;
+    if (typeof draft.saveLocation !== "boolean") draft.saveLocation = EMPTY_FORM.saveLocation;
     if (!known(draft.timing, TIMING_OPTIONS)) draft.timing = null;
     if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = EMPTY_FORM.arrival;
     if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = EMPTY_FORM.budget;
@@ -126,15 +120,20 @@ function isVague(text) {
   return words.length > 0 && words.length < 4;
 }
 
-function listAssumptions(view, form) {
+function listAssumptions(view, form, savedNow) {
   const notes = [];
   if (view.category?.source === "suggested") {
     notes.push(`We guessed the category from your description: ${view.category.label}.`);
   } else if (!view.category) {
     notes.push("No category picked — the agent will go by your description.");
   }
-  if (form.locationId === "other") notes.push("This address isn’t one of your saved locations.");
-  else if (!view.location.isDefault) notes.push(`This request is for ${view.location.label}, not your default location.`);
+  if (savedNow) {
+    notes.push(view.location.isDefault ? "We saved this address as your default location." : "We saved this address to your locations.");
+  } else if (view.location.isNew) {
+    notes.push("This address won’t be saved to your locations.");
+  } else if (!view.location.isDefault) {
+    notes.push(`This request is for ${view.location.label}, not your default location.`);
+  }
   if (form.arrival === "any") notes.push("Any arrival time works for you.");
   notes.push(`Times are in ${view.timeZone.label} time (${view.timeZone.id}), ${view.timeZone.source}.`);
   if (form.budget === "unsure") notes.push("No budget yet — you’ll compare quotes before deciding.");
@@ -147,7 +146,9 @@ export default function RequestForm() {
 }
 
 function RequestFormBody() {
-  const [form, setForm] = useState(readDraft);
+  const router = useRouter();
+  const [locations, setLocations] = useState(readLocations);
+  const [form, setForm] = useState(() => readDraft(locations));
   const [errors, setErrors] = useState({});
   const [saveState, setSaveState] = useState("idle");
   const [review, setReview] = useState(null);
@@ -156,7 +157,9 @@ function RequestFormBody() {
 
   const suggested = suggestCategory(form.service);
   const categoryId = form.category ?? suggested;
-  const savedLocation = DEMO_LOCATIONS.find((l) => l.id === form.locationId) ?? null;
+  const defaultLocation = locations.find((l) => l.isDefault) ?? locations[0] ?? null;
+  const locationId = form.locationId ?? defaultLocation?.id ?? "other";
+  const savedLocation = locations.find((l) => l.id === locationId) ?? null;
   const timeZone = form.timeZone || savedLocation?.timeZone || browserTimeZone || "America/Los_Angeles";
   const timeZoneSource = form.timeZone
     ? "chosen by you"
@@ -178,7 +181,7 @@ function RequestFormBody() {
     category: categoryId ? { label: categoryLabel(categoryId), source: form.category ? "chosen" : "suggested" } : null,
     location: savedLocation
       ? { label: savedLocation.label, address: savedLocation.address, isDefault: savedLocation.isDefault }
-      : { label: form.otherLabel.trim() || "Another address", address: form.otherAddress.trim(), isDefault: false },
+      : { label: form.otherLabel.trim() || "New address", address: form.otherAddress.trim(), isDefault: false, isNew: true },
     timing: timingText,
     arrival: describeArrival(form.arrival),
     timeZone: { id: timeZone, label: timeZoneLabel(timeZone), source: timeZoneSource },
@@ -253,12 +256,38 @@ function RequestFormBody() {
       return;
     }
     setErrors({});
-    setReview({ request: result.data, view, assumptions: listAssumptions(view, form) });
+    let reviewView = view;
+    let savedNow = false;
+    if (!savedLocation && form.saveLocation) {
+      const saved = addLocation(locations, {
+        label: result.data.location.label,
+        address: result.data.location.formattedAddress,
+        timeZone,
+      });
+      writeLocations(saved.locations);
+      setLocations(saved.locations);
+      update({ locationId: saved.location.id, otherAddress: "", otherLabel: "" });
+      const { label, address, isDefault } = saved.location;
+      reviewView = { ...view, location: { label, address, isDefault } };
+      savedNow = saved.added;
+    }
+    setReview({ request: result.data, view: reviewView, assumptions: listAssumptions(reviewView, form, savedNow) });
     window.scrollTo({ top: 0 });
   }
 
+  // Sending needs an account: new visitors go to checkout, applicants to the
+  // account review page. The draft stays saved either way.
+  function sendRequest() {
+    try {
+      window.sessionStorage.setItem(PENDING_REQUEST_KEY, "1");
+    } catch {
+      // Storage blocked: the draft itself is still saved.
+    }
+    router.push(readAccount() ? "/account/pending" : "/checkout/starter");
+  }
+
   if (review) {
-    return <ReviewPanel {...review} onEdit={() => setReview(null)} />;
+    return <ReviewPanel {...review} onEdit={() => setReview(null)} onSend={sendRequest} />;
   }
 
   const describedBy = (field) => (errors[field] ? `field-${field}-error` : undefined);
@@ -332,91 +361,108 @@ function RequestFormBody() {
             n="02"
             id="q-where"
             title="Where is the service needed?"
-            hint="Your default location is selected — pick another for this request only."
+            hint={
+              locations.length > 0
+                ? "Your default location is selected — pick another for this request only."
+                : "Add the address where the work happens."
+            }
             invalid={Boolean(errors.otherAddress || errors.otherLabel)}
           >
-            <fieldset>
-              <legend className="sr-only">Service location</legend>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {DEMO_LOCATIONS.map((loc) => (
-                  <label key={loc.id} className={cardChoiceClass}>
+            {locations.length > 0 && (
+              <fieldset>
+                <legend className="sr-only">Service location</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {locations.map((loc) => (
+                    <label key={loc.id} className={cardChoiceClass}>
+                      <input
+                        type="radio"
+                        name="location"
+                        value={loc.id}
+                        checked={locationId === loc.id}
+                        onChange={() => update({ locationId: loc.id, timeZone: "" })}
+                        className="sr-only"
+                      />
+                      <RadioDot />
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-2 font-medium">
+                          {loc.label}
+                          {loc.isDefault && (
+                            <span className="rounded-full bg-sage-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-sage">
+                              Default
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-0.5 block text-sm text-ink-soft">{loc.address}</span>
+                      </span>
+                    </label>
+                  ))}
+                  <label className={`${cardChoiceClass} border-dashed sm:col-span-2`}>
                     <input
                       type="radio"
                       name="location"
-                      value={loc.id}
-                      checked={form.locationId === loc.id}
-                      onChange={() => update({ locationId: loc.id, timeZone: "" })}
+                      value="other"
+                      checked={!savedLocation}
+                      onChange={() => update({ locationId: "other", timeZone: "" })}
                       className="sr-only"
                     />
                     <RadioDot />
-                    <span className="min-w-0">
-                      <span className="flex flex-wrap items-center gap-2 font-medium">
-                        {loc.label}
-                        {loc.isDefault && (
-                          <span className="rounded-full bg-sage-soft px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-sage">
-                            Default
-                          </span>
-                        )}
-                      </span>
-                      <span className="mt-0.5 block text-sm text-ink-soft">{loc.address}</span>
+                    <span>
+                      <span className="block font-medium">Use another address</span>
+                      <span className="mt-0.5 block text-sm text-ink-soft">For a one-off job somewhere else</span>
                     </span>
                   </label>
-                ))}
-                <label className={`${cardChoiceClass} border-dashed sm:col-span-2`}>
+                </div>
+              </fieldset>
+            )}
+
+            {!savedLocation && (
+              <div className={locations.length > 0 ? "mt-5" : ""}>
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px]">
+                  <div>
+                    <label htmlFor="field-otherAddress" className="text-sm font-medium">
+                      Address
+                    </label>
+                    <input
+                      id="field-otherAddress"
+                      autoComplete="street-address"
+                      value={form.otherAddress}
+                      onChange={(e) => update({ otherAddress: e.target.value })}
+                      placeholder="Street, city, state, ZIP"
+                      className={inputClass}
+                      aria-invalid={Boolean(errors.otherAddress)}
+                      aria-describedby={describedBy("otherAddress")}
+                    />
+                    <FieldError field="otherAddress" message={errors.otherAddress} />
+                  </div>
+                  <div>
+                    <label htmlFor="field-otherLabel" className="text-sm font-medium">
+                      Label <span className="font-normal text-ink-soft">(optional)</span>
+                    </label>
+                    <input
+                      id="field-otherLabel"
+                      maxLength={60}
+                      value={form.otherLabel}
+                      onChange={(e) => update({ otherLabel: e.target.value })}
+                      placeholder="e.g. Pine St Apartments"
+                      className={inputClass}
+                      aria-invalid={Boolean(errors.otherLabel)}
+                      aria-describedby={describedBy("otherLabel")}
+                    />
+                    <FieldError field="otherLabel" message={errors.otherLabel} />
+                  </div>
+                </div>
+                <label className="mt-4 inline-flex cursor-pointer items-center gap-2.5 text-sm">
                   <input
-                    type="radio"
-                    name="location"
-                    value="other"
-                    checked={form.locationId === "other"}
-                    onChange={() => update({ locationId: "other", timeZone: "" })}
-                    className="sr-only"
+                    type="checkbox"
+                    checked={form.saveLocation}
+                    onChange={(e) => update({ saveLocation: e.target.checked })}
+                    className="h-4 w-4 accent-signal"
                   />
-                  <RadioDot />
-                  <span>
-                    <span className="block font-medium">Use another address</span>
-                    <span className="mt-0.5 block text-sm text-ink-soft">For a one-off job somewhere else</span>
-                  </span>
+                  {locations.length > 0 ? "Save to my locations" : "Save as my default location"}
                 </label>
               </div>
-            </fieldset>
-
-            {form.locationId === "other" && (
-              <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px]">
-                <div>
-                  <label htmlFor="field-otherAddress" className="text-sm font-medium">
-                    Address
-                  </label>
-                  <input
-                    id="field-otherAddress"
-                    autoComplete="street-address"
-                    value={form.otherAddress}
-                    onChange={(e) => update({ otherAddress: e.target.value })}
-                    placeholder="Street, city, state, ZIP"
-                    className={inputClass}
-                    aria-invalid={Boolean(errors.otherAddress)}
-                    aria-describedby={describedBy("otherAddress")}
-                  />
-                  <FieldError field="otherAddress" message={errors.otherAddress} />
-                </div>
-                <div>
-                  <label htmlFor="field-otherLabel" className="text-sm font-medium">
-                    Label <span className="font-normal text-ink-soft">(optional)</span>
-                  </label>
-                  <input
-                    id="field-otherLabel"
-                    maxLength={60}
-                    value={form.otherLabel}
-                    onChange={(e) => update({ otherLabel: e.target.value })}
-                    placeholder="e.g. Lake house"
-                    className={inputClass}
-                    aria-invalid={Boolean(errors.otherLabel)}
-                    aria-describedby={describedBy("otherLabel")}
-                  />
-                  <FieldError field="otherLabel" message={errors.otherLabel} />
-                </div>
-              </div>
             )}
-            <p className="mt-4 text-xs text-ink-soft">Choosing a location here doesn’t change your default.</p>
+            {locations.length > 0 && <p className="mt-4 text-xs text-ink-soft">Choosing a location here doesn’t change your default.</p>}
           </Question>
 
           <Question
@@ -665,7 +711,7 @@ function RequestFormBody() {
                 >
                   Review request <Arrow />
                 </button>
-                <p className="text-xs text-ink-soft">Nothing is sent from this page.</p>
+                <p className="text-xs text-ink-soft">You’ll review everything before it’s sent.</p>
               </div>
             </div>
           </div>
@@ -749,17 +795,6 @@ function Question({ n, id, title, hint, optional = false, invalid = false, child
   );
 }
 
-function RadioDot() {
-  return (
-    <span
-      aria-hidden="true"
-      className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border border-ink/25 bg-surface transition group-has-[:checked]:border-ink"
-    >
-      <span className="h-2.5 w-2.5 scale-0 rounded-full bg-ink transition group-has-[:checked]:scale-100" />
-    </span>
-  );
-}
-
 function MoneyField({ field, label, placeholder, value, error, onChange }) {
   return (
     <div>
@@ -782,14 +817,5 @@ function MoneyField({ field, label, placeholder, value, error, onChange }) {
       </div>
       <FieldError field={field} message={error} />
     </div>
-  );
-}
-
-function FieldError({ field, message }) {
-  if (!message) return null;
-  return (
-    <p id={`field-${field}-error`} className="mt-2 text-sm text-signal">
-      {message}
-    </p>
   );
 }

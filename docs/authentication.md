@@ -1,6 +1,6 @@
 # Google sign-in
 
-The `/sign-in` page uses NextAuth.js v5 (the `next-auth@beta` release documented by Auth.js), Google OAuth, and encrypted JWT session cookies. No database is required for this initial login flow. Users go to `/requests/new` after successful authentication. Visitors who already have a session are redirected from `/sign-in` to `/requests/new`, so every Get early access link on the home page takes them into the app. The home page shows a Sign in button beside Get early access, which becomes Sign out when authenticated. Signing out returns to `/`. This does not yet persist an early-access registration or create an application dashboard.
+The `/sign-in` page uses NextAuth.js v5 (the `next-auth@beta` release documented by Auth.js), Google OAuth, and encrypted JWT session cookies. No database is required for this initial login flow. Users go to `/requests/new` after successful authentication. Visitors who already have a session are redirected from `/sign-in` to `/requests/new`. The home page shows Sign in beside Get started; signed-in visitors see New request and Sign out instead. Signing out returns to `/`. This does not yet persist an early-access registration or create an application dashboard.
 
 ## Local setup
 

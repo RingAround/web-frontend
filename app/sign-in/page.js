@@ -41,8 +41,7 @@ async function SignInCard({ searchParams }) {
   const configured = isAuthConfigured();
   const user = (await getSession())?.user;
 
-  // Signed-in visitors go straight to the app, so every "Get early access"
-  // link on the home page works for them too.
+  // Signed-in visitors go straight to the app.
   if (user) redirect("/requests/new");
 
   return <SignInCardContent user={user} configured={configured} error={error} />;
