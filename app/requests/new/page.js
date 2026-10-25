@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { getSession } from "@/auth";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
-import RequestForm from "./request-form";
+import ProfileGate from "./profile-gate";
 
 export const metadata = {
   title: "New quote request — RingAround",
 };
+
+async function AuthenticatedRequest() {
+  const session = await getSession();
+  if (!session?.user?.id) redirect("/sign-in");
+  return <ProfileGate user={{ id: session.user.id, name: session.user.name || "" }} />;
+}
 
 export default function NewRequestPage() {
   return (
@@ -30,7 +38,9 @@ export default function NewRequestPage() {
         </div>
       </header>
       <main className="flex-1">
-        <RequestForm />
+        <Suspense fallback={<p role="status" className="px-6 py-16 text-center text-ink-soft">Loading your profile…</p>}>
+          <AuthenticatedRequest />
+        </Suspense>
       </main>
     </div>
   );
