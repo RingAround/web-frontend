@@ -27,7 +27,7 @@ const DRAFT_KEY = REQUEST_DRAFT_KEY;
 const EMPTY_FORM = {
   service: "",
   category: null, // null = use the suggestion from the description
-  locationId: null, // a saved location id, "other" for a new address, or null for the default
+  locationId: "other", // a saved location id, or "other" for a new address
   otherAddress: "",
   otherLabel: "",
   saveLocation: true,
@@ -74,28 +74,29 @@ const cardClass = "rounded-[28px] border bg-surface/70 p-6 transition-colors sm:
 const segmentClass = `flex cursor-pointer items-center justify-center rounded-2xl border border-line bg-surface px-3 py-3 text-sm font-medium transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
 const chipClass = `inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm transition hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-paper ${focusRing}`;
 
-function readDraft(locations) {
+function readDraft(locations, draftKey) {
+  const emptyForm = { ...EMPTY_FORM, locationId: locations.find((location) => location.isDefault)?.id || locations[0]?.id || "other" };
   try {
-    const saved = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null");
-    if (!saved || typeof saved !== "object") return EMPTY_FORM;
+    const saved = JSON.parse(window.localStorage.getItem(draftKey) ?? "null");
+    if (!saved || typeof saved !== "object") return emptyForm;
     // Keep only fields the form knows, with the right types and ids that still
     // exist; a stale or hand-edited draft could otherwise submit unknown values.
     const draft = Object.fromEntries(
-      Object.entries(EMPTY_FORM).map(([key, fallback]) => [
+      Object.entries(emptyForm).map(([key, fallback]) => [
         key,
         typeof fallback === "string" && typeof saved[key] !== "string" ? fallback : (saved[key] ?? fallback),
       ]),
     );
     const known = (value, options) => options.some((o) => o.id === value);
     if (!known(draft.category, SERVICE_CATEGORIES)) draft.category = null;
-    if (draft.locationId !== "other" && !known(draft.locationId, locations)) draft.locationId = null;
-    if (typeof draft.saveLocation !== "boolean") draft.saveLocation = EMPTY_FORM.saveLocation;
+    if (draft.locationId !== "other" && !known(draft.locationId, locations)) draft.locationId = emptyForm.locationId;
     if (!known(draft.timing, TIMING_OPTIONS)) draft.timing = null;
-    if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = EMPTY_FORM.arrival;
-    if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = EMPTY_FORM.budget;
+    if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = emptyForm.arrival;
+    if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = emptyForm.budget;
+    if (typeof draft.saveLocation !== "boolean") draft.saveLocation = emptyForm.saveLocation;
     return draft;
   } catch {
-    return EMPTY_FORM;
+    return emptyForm;
   }
 }
 
@@ -128,7 +129,7 @@ function listAssumptions(view, form, savedNow) {
     notes.push("No category picked — the agent will go by your description.");
   }
   if (savedNow) {
-    notes.push(view.location.isDefault ? "We saved this address as your default location." : "We saved this address to your locations.");
+    notes.push("We saved this address to your locations.");
   } else if (view.location.isNew) {
     notes.push("This address won’t be saved to your locations.");
   } else if (!view.location.isDefault) {
@@ -140,15 +141,25 @@ function listAssumptions(view, form, savedNow) {
   return notes;
 }
 
-export default function RequestForm() {
+export default function RequestForm({ profile, userId }) {
   const inBrowser = useBrowserValue(() => true);
-  return inBrowser ? <RequestFormBody /> : <FormSkeleton />;
+  const profileLocation = profile
+    ? { id: "profile-default", label: "Default address", address: profile.defaultAddress, isDefault: true }
+    : null;
+  const draftKey = userId ? `${DRAFT_KEY}:${encodeURIComponent(userId)}` : DRAFT_KEY;
+  return inBrowser ? (
+    <RequestFormBody profileLocation={profileLocation} userId={userId} draftKey={draftKey} />
+  ) : (
+    <FormSkeleton />
+  );
 }
 
-function RequestFormBody() {
+function RequestFormBody({ profileLocation, userId, draftKey }) {
   const router = useRouter();
-  const [locations, setLocations] = useState(readLocations);
-  const [form, setForm] = useState(() => readDraft(locations));
+  // The profile address comes first as the default; addresses saved from this form follow.
+  const [savedLocations, setSavedLocations] = useState(() => readLocations(userId));
+  const locations = profileLocation ? [profileLocation, ...savedLocations] : savedLocations;
+  const [form, setForm] = useState(() => readDraft(locations, draftKey));
   const [errors, setErrors] = useState({});
   const [saveState, setSaveState] = useState("idle");
   const [review, setReview] = useState(null);
@@ -157,13 +168,11 @@ function RequestFormBody() {
 
   const suggested = suggestCategory(form.service);
   const categoryId = form.category ?? suggested;
-  const defaultLocation = locations.find((l) => l.isDefault) ?? locations[0] ?? null;
-  const locationId = form.locationId ?? defaultLocation?.id ?? "other";
-  const savedLocation = locations.find((l) => l.id === locationId) ?? null;
+  const savedLocation = locations.find((l) => l.id === form.locationId) ?? null;
   const timeZone = form.timeZone || savedLocation?.timeZone || browserTimeZone || "America/Los_Angeles";
   const timeZoneSource = form.timeZone
     ? "chosen by you"
-    : savedLocation
+    : savedLocation?.timeZone
       ? `from ${savedLocation.label}`
       : "from your browser";
   // Today where the job is, re-read every render so it can't go stale overnight.
@@ -208,7 +217,7 @@ function RequestFormBody() {
     setSaveState("saving");
     saveTimer.current = setTimeout(() => {
       try {
-        window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+        window.localStorage.setItem(draftKey, JSON.stringify(next));
         setSaveState("saved");
       } catch {
         setSaveState("unavailable");
@@ -219,11 +228,11 @@ function RequestFormBody() {
   function startOver() {
     clearTimeout(saveTimer.current);
     try {
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(draftKey);
     } catch {
       // Storage blocked: nothing to clear.
     }
-    setForm(EMPTY_FORM);
+    setForm(readDraft(locations, draftKey));
     setErrors({});
     setSaveState("idle");
   }
@@ -259,23 +268,24 @@ function RequestFormBody() {
     let reviewView = view;
     let savedNow = false;
     if (!savedLocation && form.saveLocation) {
-      const saved = addLocation(locations, {
-        label: result.data.location.label,
-        address: result.data.location.formattedAddress,
-        timeZone,
-      });
-      writeLocations(saved.locations);
-      setLocations(saved.locations);
-      update({ locationId: saved.location.id, otherAddress: "", otherLabel: "" });
-      const { label, address, isDefault } = saved.location;
-      reviewView = { ...view, location: { label, address, isDefault } };
-      savedNow = saved.added;
+      const address = result.data.location.formattedAddress;
+      const match = locations.find((l) => l.address.toLowerCase() === address.toLowerCase());
+      let location = match;
+      if (!match) {
+        const saved = addLocation(savedLocations, { label: result.data.location.label, address, timeZone });
+        writeLocations(userId, saved.locations);
+        setSavedLocations(saved.locations);
+        location = saved.location;
+        savedNow = saved.added;
+      }
+      update({ locationId: location.id, otherAddress: "", otherLabel: "" });
+      reviewView = { ...view, location: { label: location.label, address: location.address, isDefault: location.isDefault } };
     }
     setReview({ request: result.data, view: reviewView, assumptions: listAssumptions(reviewView, form, savedNow) });
     window.scrollTo({ top: 0 });
   }
 
-  // Sending needs an account: new visitors go to checkout, applicants to the
+  // Sending needs an account: new customers go to checkout, applicants to the
   // account review page. The draft stays saved either way.
   function sendRequest() {
     try {
@@ -378,7 +388,7 @@ function RequestFormBody() {
                         type="radio"
                         name="location"
                         value={loc.id}
-                        checked={locationId === loc.id}
+                        checked={form.locationId === loc.id}
                         onChange={() => update({ locationId: loc.id, timeZone: "" })}
                         className="sr-only"
                       />
@@ -408,7 +418,7 @@ function RequestFormBody() {
                     <RadioDot />
                     <span>
                       <span className="block font-medium">Use another address</span>
-                      <span className="mt-0.5 block text-sm text-ink-soft">For a one-off job somewhere else</span>
+                      <span className="mt-0.5 block text-sm text-ink-soft">For a job somewhere else</span>
                     </span>
                   </label>
                 </div>
@@ -443,7 +453,7 @@ function RequestFormBody() {
                       maxLength={60}
                       value={form.otherLabel}
                       onChange={(e) => update({ otherLabel: e.target.value })}
-                      placeholder="e.g. Pine St Apartments"
+                      placeholder="e.g. Eastside office"
                       className={inputClass}
                       aria-invalid={Boolean(errors.otherLabel)}
                       aria-describedby={describedBy("otherLabel")}
@@ -458,7 +468,7 @@ function RequestFormBody() {
                     onChange={(e) => update({ saveLocation: e.target.checked })}
                     className="h-4 w-4 accent-signal"
                   />
-                  {locations.length > 0 ? "Save to my locations" : "Save as my default location"}
+                  Save to my locations
                 </label>
               </div>
             )}
