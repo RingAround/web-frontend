@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import { Arrow, CheckGlyph } from "@/components/icons";
 
 function Badge({ children }) {
@@ -96,13 +99,21 @@ function ReviewItem({ label, children }) {
 }
 
 const NEXT_STEPS = [
-  { title: "Find providers", body: "We search for relevant businesses near the job site." },
-  { title: "Approve the shortlist", body: "You choose who gets contacted and set the call limit." },
-  { title: "Get quotes", body: "The agent calls during business hours and reports back." },
+  { title: "Find providers", body: "The agent searches for relevant businesses near the job site." },
+  { title: "Make the calls", body: "It calls them during business hours, giving your name and callback number." },
+  { title: "Get quotes", body: "Progress and quotes show up on the request page as they come in." },
 ];
 
 // Read-back of a validated request before anything is sent.
-export function ReviewPanel({ request, view, assumptions, onEdit }) {
+export function ReviewPanel({ request, view, assumptions, canSend, onEdit, onSend }) {
+  const [pending, startSending] = useTransition();
+  const [error, setError] = useState(null);
+
+  function send() {
+    setError(null);
+    startSending(async () => setError(await onSend()));
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-10 sm:px-6 md:pt-14">
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">Review</p>
@@ -110,7 +121,7 @@ export function ReviewPanel({ request, view, assumptions, onEdit }) {
         Look <em>right?</em>
       </h1>
       <p className="mt-4 max-w-xl text-ink-soft">
-        This is what the agent will work from. Nothing has been sent, and no one has been called.
+        This is what the agent will work from. Nothing is sent, and no one is called, until you choose Find providers.
       </p>
 
       <div className="mt-10 overflow-hidden rounded-[28px] border border-line bg-surface shadow-[0_30px_80px_-40px_rgb(21_20_15/0.4)]">
@@ -181,12 +192,19 @@ export function ReviewPanel({ request, view, assumptions, onEdit }) {
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <button
             type="button"
-            disabled
-            className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-ink/10 px-7 py-3.5 font-medium text-ink/45"
+            onClick={send}
+            disabled={!canSend || pending}
+            aria-busy={pending}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-signal px-7 py-3.5 font-medium text-white transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/45"
           >
-            Find providers
+            {pending ? "Starting the agent…" : "Find providers"}
+            {!pending && <Arrow />}
           </button>
-          <p className="text-xs text-ink-soft">Provider search isn’t connected yet — that’s the next step.</p>
+          {error ? (
+            <p role="alert" className="max-w-xs text-sm text-signal sm:text-right">{error}</p>
+          ) : (
+            <p className="text-xs text-ink-soft">The agent starts calling as soon as you send this.</p>
+          )}
         </div>
       </div>
     </div>

@@ -22,6 +22,13 @@ Everything lives on the `prod` GitHub Environment (Settings → Environments →
 | `GOOGLE_AUTH_ID` | variable | Google OAuth client ID |
 | `GOOGLE_AUTH_SECRET` | secret | Google OAuth client secret |
 
+| `CLAUDE_API_KEY` | secret | Anthropic API key used to start agent sessions |
+| `CLAUDE_AGENT_ID` | variable | Managed Agents agent that runs each request |
+| `CLAUDE_ENVIRONMENT_ID` | variable | Environment its sessions run in |
+| `CLAUDE_VAULT_ID` | variable | Vault holding the credentials the agent's tools need |
+
+When all four `CLAUDE_*` values are set, each production deploy uploads them to the Worker; until then **Find providers** reports that calling isn't switched on. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
+
 When `AUTH_SECRET`, `GOOGLE_AUTH_ID` and `GOOGLE_AUTH_SECRET` are all set, each production deploy uploads them to the Worker as `AUTH_SECRET`, `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, the names `auth.js` reads.
 
 The `ringaround.me` zone must be in the same Cloudflare account. The workflow creates the R2 buckets `ringaround-opennext-cache` and `ringaround-preview-opennext-cache` on first deploy if they don't exist yet.

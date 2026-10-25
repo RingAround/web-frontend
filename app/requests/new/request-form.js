@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { Arrow } from "@/components/icons";
 import { DEFAULT_LOCATION_ID, DEMO_LOCATIONS } from "@/lib/demo-locations";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/lib/request";
 import { SERVICE_CATEGORIES, categoryLabel, suggestCategory } from "@/lib/service-categories";
 import { RequestSummary, ReviewPanel } from "./request-summary";
+import { sendRequest } from "./actions";
 
 const DRAFT_KEY = "ringaround:request-draft:v1";
 
@@ -135,10 +137,11 @@ export default function RequestForm({ profile, userId }) {
     ? [{ id: "profile-default", label: "Default address", address: profile.defaultAddress, isDefault: true }]
     : DEMO_LOCATIONS;
   const draftKey = userId ? `${DRAFT_KEY}:${encodeURIComponent(userId)}` : DRAFT_KEY;
-  return inBrowser ? <RequestFormBody locations={locations} draftKey={draftKey} /> : <FormSkeleton />;
+  return inBrowser ? <RequestFormBody locations={locations} draftKey={draftKey} profile={profile} /> : <FormSkeleton />;
 }
 
-function RequestFormBody({ locations, draftKey }) {
+function RequestFormBody({ locations, draftKey, profile }) {
+  const router = useRouter();
   const [form, setForm] = useState(() => readDraft(locations, draftKey));
   const [errors, setErrors] = useState({});
   const [saveState, setSaveState] = useState("idle");
@@ -246,8 +249,21 @@ function RequestFormBody({ locations, draftKey }) {
     window.scrollTo({ top: 0 });
   }
 
+  // Resolves with an error message, or navigates away once the agent has started.
+  async function send() {
+    const result = await sendRequest({ request: review.request, profile, today });
+    if (result.error) return result.error;
+    try {
+      window.localStorage.removeItem(draftKey);
+    } catch {
+      // Storage blocked: the stale draft is harmless.
+    }
+    router.push(`/requests/${result.sessionId}`);
+    return null;
+  }
+
   if (review) {
-    return <ReviewPanel {...review} onEdit={() => setReview(null)} />;
+    return <ReviewPanel {...review} canSend={Boolean(profile)} onEdit={() => setReview(null)} onSend={send} />;
   }
 
   const describedBy = (field) => (errors[field] ? `field-${field}-error` : undefined);

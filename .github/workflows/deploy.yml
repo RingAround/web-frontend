@@ -33,6 +33,10 @@
 #   variable CF_ACCOUNT_ID            Cloudflare account ID (also in wrangler.jsonc)
 #   variable CF_S3_ACCESS_KEY_ID      R2 S3 API key pair, for the cache upload
 #   secret   CF_S3_SECRET_ACCESS_KEY
+#   secret   CLAUDE_API_KEY           Anthropic API key, for starting agent sessions
+#   variable CLAUDE_AGENT_ID          Managed Agents agent, environment and vault the
+#   variable CLAUDE_ENVIRONMENT_ID    sessions run with. Production uploads all four
+#   variable CLAUDE_VAULT_ID          to the Worker when all four are set.
 #   secret   AUTH_SECRET              Session encryption key (openssl rand -base64 32)
 #   variable GOOGLE_AUTH_ID           Google OAuth client ID
 #   secret   GOOGLE_AUTH_SECRET       Google OAuth client secret
@@ -142,23 +146,40 @@ jobs:
         run: npx wrangler r2 bucket info "$BUCKET" > /dev/null 2>&1 || npx wrangler r2 bucket create "$BUCKET"
 
       # Secrets are additive: a deploy never deletes one, so leaving these unset
-      # in GitHub keeps whatever was put on the Worker by hand.
+      # in GitHub keeps whatever was put on the Worker by hand. Each group is
+      # uploaded only when complete, so a half-configured feature stays off.
+      # The Claude IDs aren't secret, but as Worker secrets they survive deploys
+      # the same way the key does.
       - name: Prepare Worker secrets
         id: secrets
         env:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           AUTH_GOOGLE_ID: ${{ vars.GOOGLE_AUTH_ID }}
           AUTH_GOOGLE_SECRET: ${{ secrets.GOOGLE_AUTH_SECRET }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_AGENT_ID: ${{ vars.CLAUDE_AGENT_ID }}
+          CLAUDE_ENVIRONMENT_ID: ${{ vars.CLAUDE_ENVIRONMENT_ID }}
+          CLAUDE_VAULT_ID: ${{ vars.CLAUDE_VAULT_ID }}
         run: |
-          if [ -n "$AUTH_SECRET" ] && [ -n "$AUTH_GOOGLE_ID" ] && [ -n "$AUTH_GOOGLE_SECRET" ]; then
-            file="$RUNNER_TEMP/worker-secrets.json"
-            jq -n '{AUTH_SECRET: env.AUTH_SECRET, AUTH_GOOGLE_ID: env.AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET: env.AUTH_GOOGLE_SECRET}' > "$file"
+          file="$RUNNER_TEMP/worker-secrets.json"
+          echo '{}' > "$file"
+          add_group() {
+            local label="$1"; shift
+            for name in "$@"; do
+              if [ -z "${!name}" ]; then
+                echo "::warning::$label is off: $name is not set on the \`prod\` environment, so none of $* were uploaded. See docs/deployment.md."
+                return
+              fi
+            done
+            for name in "$@"; do
+              jq --arg k "$name" '. + {($k): env[$k]}' "$file" > "$file.next" && mv "$file.next" "$file"
+            done
+            echo "$label: uploading $*"
+          }
+          add_group "Google sign-in" AUTH_SECRET AUTH_GOOGLE_ID AUTH_GOOGLE_SECRET
+          add_group "Agent calling" CLAUDE_API_KEY CLAUDE_AGENT_ID CLAUDE_ENVIRONMENT_ID CLAUDE_VAULT_ID
+          if [ "$(jq length "$file")" -gt 0 ]; then
             echo "args=--secrets-file $file" >> "$GITHUB_OUTPUT"
-            echo "AUTH_* secrets: uploading"
-          else
-            echo "::warning::AUTH_SECRET, GOOGLE_AUTH_ID and GOOGLE_AUTH_SECRET are not all set on the \`prod\` environment, so none" \
-                 "were uploaded. Google sign-in stays unavailable unless they were set on the" \
-                 "Worker directly. See docs/deployment.md."
           fi
 
       - name: Deploy to production
