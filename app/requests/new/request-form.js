@@ -32,7 +32,7 @@ const EMPTY_FORM = {
   otherAddress: "",
   otherLabel: "",
   saveLocation: true,
-  timing: null,
+  timing: "asap",
   date: "",
   rangeStart: "",
   rangeEnd: "",
@@ -91,7 +91,7 @@ function readDraft(locations, draftKey) {
     const known = (value, options) => options.some((o) => o.id === value);
     if (!known(draft.category, SERVICE_CATEGORIES)) draft.category = null;
     if (draft.locationId !== "other" && !known(draft.locationId, locations)) draft.locationId = emptyForm.locationId;
-    if (!known(draft.timing, TIMING_OPTIONS)) draft.timing = null;
+    if (!known(draft.timing, TIMING_OPTIONS)) draft.timing = emptyForm.timing;
     if (!known(draft.arrival, ARRIVAL_WINDOWS)) draft.arrival = emptyForm.arrival;
     if (draft.budget !== "unsure" && draft.budget !== "range") draft.budget = emptyForm.budget;
     if (typeof draft.saveLocation !== "boolean") draft.saveLocation = emptyForm.saveLocation;
