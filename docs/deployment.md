@@ -74,7 +74,7 @@ node --env-file=.env.local scripts/connect-agent.mjs          # shows what would
 node --env-file=.env.local scripts/connect-agent.mjs --apply
 ```
 
-The script adds the MCP server and its toolset (set to `always_allow`, so reports never pause the agent) and stores the token in the vault. It leaves the agent's other tools and its system prompt unchanged.
+The script adds the MCP server and its toolset (set to `always_allow`, so reports never pause the agent), stores the token in the vault, and sets the agent's system prompt to `agent/system-prompt.md`. Change the prompt by editing that file and re-running the script, not in the Console, or the next run will overwrite the Console edit. The agent's other tools are left unchanged.
 
 ## Running the Workers build locally
 
