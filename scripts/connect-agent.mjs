@@ -50,8 +50,14 @@ console.log(`  system prompt: ${agent.system ? `${agent.system.length} character
 // webhook instructions the live prompt still has, which --apply replaces.
 const webhookLines = (agent.system ?? "").split("\n").map((line, i) => [i + 1, line]).filter(([, line]) => /webhook/i.test(line));
 if (webhookLines.length > 0) {
-  console.log("\n  Live system prompt lines about webhooks (replaced by --apply):");
-  for (const [n, line] of webhookLines) console.log(`    ${n}: ${line.trim()}`);
+  // CI logs are readable by anyone with access to the repo's Actions, so
+  // prompt text is only printed when run by hand.
+  if (process.env.CI) {
+    console.log(`\n  Live system prompt mentions webhooks on line(s) ${webhookLines.map(([n]) => n).join(", ")} (replaced by --apply)`);
+  } else {
+    console.log("\n  Live system prompt lines about webhooks (replaced by --apply):");
+    for (const [n, line] of webhookLines) console.log(`    ${n}: ${line.trim()}`);
+  }
 }
 const promptChanges = (agent.system ?? "").trim() !== systemPrompt;
 
