@@ -155,6 +155,20 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
         run: npx wrangler d1 migrations apply DB --remote
 
+      # The agent's skill (skills/ringaround/SKILL.md) ships with the code that
+      # writes its brief, so a failed upload stops the deploy. An unchanged file
+      # uploads nothing. Previews skip this: they share the production agent.
+      - name: Deploy the agent skill
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_AGENT_ID: ${{ vars.CLAUDE_AGENT_ID }}
+        run: |
+          if [ -z "$CLAUDE_API_KEY" ] || [ -z "$CLAUDE_AGENT_ID" ]; then
+            echo "::warning::Agent skill not deployed: CLAUDE_API_KEY or CLAUDE_AGENT_ID is not set on the \`prod\` environment. See docs/deployment.md."
+            exit 0
+          fi
+          node scripts/deploy-skill.mjs --apply
+
       # Secrets are additive: a deploy never deletes one, so leaving these unset
       # in GitHub keeps whatever was put on the Worker by hand. Each group is
       # uploaded only when complete, so a half-configured feature stays off.

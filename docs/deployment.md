@@ -29,6 +29,10 @@ Everything lives on the `prod` GitHub Environment (Settings → Environments →
 
 When all four `CLAUDE_*` values and `ALLOWED_EMAILS` are set, each production deploy uploads them to the Worker. Only signed-in accounts on the list get **Find providers**, which starts the agent; everyone else gets **Send request**, which goes to checkout or account review as before, and the server rejects their sessions regardless. An empty or missing list lets nobody call. To change the list, edit the variable and redeploy. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
 
+### The agent's skill
+
+`skills/ringaround/SKILL.md` is the skill the calling agent works from. Each production deploy runs `scripts/deploy-skill.mjs`, which uploads it as a new version through the Skills API and pins that version on the agent named by `CLAUDE_AGENT_ID`, so requests started after the deploy use the skill from that commit. The agent's metadata records the file's hash, so a deploy that doesn't change the file uploads nothing. Redeploying an older commit uploads its copy, which rolls the skill back with the code. Previews never touch the agent. To check what a deploy would do, run `node --env-file=.env.local scripts/deploy-skill.mjs`; add `--apply` to make the change from your machine.
+
 When `AUTH_SECRET`, `GOOGLE_AUTH_ID` and `GOOGLE_AUTH_SECRET` are all set, each production deploy uploads them to the Worker as `AUTH_SECRET`, `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`, the names `auth.js` reads.
 
 The `ringaround.me` zone must be in the same Cloudflare account. The workflow creates the R2 buckets `ringaround-opennext-cache` and `ringaround-preview-opennext-cache` on first deploy if they don't exist yet.
