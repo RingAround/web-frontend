@@ -171,6 +171,27 @@ jobs:
           fi
           node scripts/deploy-skill.mjs --apply
 
+      # Points the agent at /api/mcp (report_call), keeps the vault's MCP_TOKEN
+      # matching the Worker's, and applies agent/system-prompt.md. Runs after
+      # the skill so both updates see the latest agent version. Unchanged
+      # settings leave the agent alone. A failure here shows as a warning but
+      # doesn't hold back the site: the agent keeps its previous settings.
+      - name: Connect the agent
+        continue-on-error: true
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_AGENT_ID: ${{ vars.CLAUDE_AGENT_ID }}
+          CLAUDE_VAULT_ID: ${{ vars.CLAUDE_VAULT_ID }}
+          MCP_TOKEN: ${{ secrets.MCP_TOKEN }}
+        run: |
+          for name in CLAUDE_API_KEY CLAUDE_AGENT_ID CLAUDE_VAULT_ID MCP_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::warning::Agent not connected: $name is not set on the \`prod\` environment. See docs/deployment.md."
+              exit 0
+            fi
+          done
+          node scripts/connect-agent.mjs --apply
+
       # Secrets are additive: a deploy never deletes one, so leaving these unset
       # in GitHub keeps whatever was put on the Worker by hand. Each group is
       # uploaded only when complete, so a half-configured feature stays off.

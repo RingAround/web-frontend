@@ -67,14 +67,14 @@ For `npm run dev`, create the local tables once with `npm run db:migrate:local`.
 
 The calling agent reports each business it contacts to `https://ringaround.me/api/mcp`, an MCP server with one tool, `report_call`. Each request's brief includes its reference (`req_…`), and the tool records the business, status (queued, calling, quoted, retry, declined) and a one-line detail in the `provider_calls` table. The request pages show those rows. The tool also enforces each request's call cap (5): the first call past it is refused, and the agent is told not to dial.
 
-Only the agent can call the endpoint: it presents `MCP_TOKEN`, which lives in its vault as a bearer credential. To connect the agent (once, or again after rotating the token), fill in `.env.local` and run:
+Only the agent can call the endpoint: it presents `MCP_TOKEN`, which lives in its vault as a bearer credential. Each production deploy runs `scripts/connect-agent.mjs --apply` with the `prod` secrets, so the agent's MCP server, vault token and system prompt follow the repo. To preview or run it by hand, fill in `.env.local` and run:
 
 ```sh
 node --env-file=.env.local scripts/connect-agent.mjs          # shows what would change
 node --env-file=.env.local scripts/connect-agent.mjs --apply
 ```
 
-The script adds the MCP server and its toolset (set to `always_allow`, so reports never pause the agent) and stores the token in the vault. It leaves the agent's other tools and its system prompt unchanged.
+The script adds the MCP server and its toolset (set to `always_allow`, so reports never pause the agent), stores the token in the vault, and sets the agent's system prompt to `agent/system-prompt.md`. Change the prompt by editing that file and re-running the script, not in the Console, or the next run will overwrite the Console edit. The agent's other tools are left unchanged.
 
 ## Running the Workers build locally
 
