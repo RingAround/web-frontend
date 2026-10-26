@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
+import { getSession } from "@/auth";
+import { hasRequests } from "@/lib/db";
 import { AuthNavigation, AuthNavigationFallback } from "@/components/auth-navigation";
-import { Arrow, CheckGlyph, PhoneGlyph } from "@/components/icons";
+import { Arrow, CheckGlyph } from "@/components/icons";
+import { CallCount, CallList, RequestSummaryCard } from "@/components/request-board";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PLANS, PLAN_FEATURES } from "@/lib/plans";
@@ -21,27 +26,27 @@ const ROLES = [
 
 const CALLS = [
   {
-    name: "Brightline Cleaning Co.",
-    status: "quote",
+    business: "Brightline Cleaning Co.",
+    status: "quoted",
     detail: "$320 flat · Fri 8–11am · supplies included",
   },
   {
-    name: "Evergreen Maid Service",
+    business: "Evergreen Maid Service",
     status: "calling",
     detail: "Asking about weekend availability",
   },
   {
-    name: "Harbor Home Care",
+    business: "Harbor Home Care",
     status: "retry",
     detail: "Voicemail · retrying at 2:00pm",
   },
   {
-    name: "Pine & Co. Cleaners",
+    business: "Pine & Co. Cleaners",
     status: "declined",
     detail: "Booked through Nov 10",
   },
   {
-    name: "Summit Clean Pros",
+    business: "Summit Clean Pros",
     status: "queued",
     detail: "Opens at 9:00am local",
   },
@@ -191,43 +196,6 @@ const FAQS = [
   },
 ];
 
-function StatusPill({ status }) {
-  const map = {
-    quote: ["Quote", "bg-sage-soft text-sage"],
-    calling: ["Calling", "bg-signal-soft text-signal"],
-    retry: ["Retry", "bg-amber-soft text-amber"],
-    declined: ["Declined", "bg-paper-2 text-ink-soft"],
-    queued: ["Queued", "bg-paper-2 text-ink-soft"],
-  };
-  const [label, cls] = map[status];
-  return (
-    <span className={`rounded-full px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-wider ${cls}`}>
-      {label}
-    </span>
-  );
-}
-
-function CallIcon({ status }) {
-  if (status === "calling") {
-    return (
-      <span className="ring-pulse grid h-9 w-9 shrink-0 place-items-center rounded-full bg-signal text-white">
-        <PhoneGlyph />
-      </span>
-    );
-  }
-  const tone =
-    status === "quote"
-      ? "bg-sage text-paper"
-      : status === "retry"
-        ? "bg-amber-soft text-amber"
-        : "bg-paper-2 text-ink-soft";
-  return (
-    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${tone}`}>
-      {status === "quote" ? <CheckGlyph /> : <PhoneGlyph />}
-    </span>
-  );
-}
-
 function HeroBoard() {
   return (
     <div className="relative isolate">
@@ -242,63 +210,16 @@ function HeroBoard() {
       </svg>
 
       <div className="rise rounded-[28px] border border-line bg-surface/80 p-2 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.35)] backdrop-blur" style={{ animationDelay: "0.25s" }}>
-        {/* request summary */}
-        <div className="rounded-[22px] bg-night p-5 text-on-night">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/50">Sample request</span>
-            <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-signal">
-              <span className="h-1.5 w-1.5 rounded-full bg-signal" /> Live
-            </span>
-          </div>
-          <p className="mt-3 font-display text-2xl leading-tight">Turnover deep clean, 2-bed unit</p>
-          <dl className="mt-4 grid grid-cols-3 gap-3 text-xs">
-            <div>
-              <dt className="text-on-night/45">Where</dt>
-              <dd className="mt-0.5">Unit 4B, Pine St</dd>
-            </div>
-            <div>
-              <dt className="text-on-night/45">When</dt>
-              <dd className="mt-0.5">By Friday AM</dd>
-            </div>
-            <div>
-              <dt className="text-on-night/45">Budget</dt>
-              <dd className="mt-0.5">$250–$400</dd>
-            </div>
-          </dl>
-        </div>
-
-        {/* calls */}
-        <ul className="divide-y divide-line/70 px-3 py-1">
-          {CALLS.map((c) => (
-            <li key={c.name} className="flex items-center gap-3 py-3">
-              <CallIcon status={c.status} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{c.name}</p>
-                <p className="truncate text-xs text-ink-soft">
-                  {c.status === "calling" ? (
-                    <>
-                      {c.detail}
-                      <span className="dots ml-0.5">
-                        <span>.</span>
-                        <span>.</span>
-                        <span>.</span>
-                      </span>
-                    </>
-                  ) : (
-                    c.detail
-                  )}
-                </p>
-              </div>
-              <StatusPill status={c.status} />
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex items-center justify-end rounded-[18px] bg-paper-2/70 px-4 py-3 text-xs">
-          <span className="text-ink-soft">
-            <b className="font-semibold text-ink">2 of 5</b> calls placed · cap 5
-          </span>
-        </div>
+        <RequestSummaryCard
+          label="Sample request"
+          live
+          title="Turnover deep clean, 2-bed unit"
+          where="Unit 4B, Pine St"
+          when="By Friday AM"
+          budget="$250–$400"
+        />
+        <CallList calls={CALLS} />
+        <CallCount placed={2} cap={5} />
       </div>
 
       {/* floating quote chip */}
@@ -356,7 +277,13 @@ function PlanCard({ plan }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  // Once someone has sent a request, their requests are home: the marketing
+  // page is for people who haven't started yet.
+  await connection();
+  const userId = (await getSession())?.user?.id;
+  if (userId && (await hasRequests(userId))) redirect("/requests");
+
   return (
     <div className="relative flex flex-1 flex-col overflow-x-clip">
       {/* NAV */}
