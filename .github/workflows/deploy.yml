@@ -38,6 +38,8 @@
 #   variable CLAUDE_ENVIRONMENT_ID    sessions run with. Production uploads all four
 #   variable CLAUDE_VAULT_ID          to the Worker, with ALLOWED_EMAILS, when all are set.
 #   variable ALLOWED_EMAILS           Accounts allowed to start calls (comma separated)
+#   secret   MCP_TOKEN                Bearer token the agent presents to /api/mcp to report
+#                                     calls; the same value lives in the agent's vault
 #   secret   AUTH_SECRET              Session encryption key (openssl rand -base64 32)
 #   variable GOOGLE_AUTH_ID           Google OAuth client ID
 #   secret   GOOGLE_AUTH_SECRET       Google OAuth client secret
@@ -185,6 +187,7 @@ jobs:
           CLAUDE_ENVIRONMENT_ID: ${{ vars.CLAUDE_ENVIRONMENT_ID }}
           CLAUDE_VAULT_ID: ${{ vars.CLAUDE_VAULT_ID }}
           ALLOWED_EMAILS: ${{ vars.ALLOWED_EMAILS }}
+          MCP_TOKEN: ${{ secrets.MCP_TOKEN }}
         run: |
           file="$RUNNER_TEMP/worker-secrets.json"
           echo '{}' > "$file"
@@ -203,6 +206,7 @@ jobs:
           }
           add_group "Google sign-in" AUTH_SECRET AUTH_GOOGLE_ID AUTH_GOOGLE_SECRET
           add_group "Agent calling" CLAUDE_API_KEY CLAUDE_AGENT_ID CLAUDE_ENVIRONMENT_ID CLAUDE_VAULT_ID ALLOWED_EMAILS
+          add_group "Call tracking" MCP_TOKEN
           if [ "$(jq length "$file")" -gt 0 ]; then
             echo "args=--secrets-file $file" >> "$GITHUB_OUTPUT"
           fi

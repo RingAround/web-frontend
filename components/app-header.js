@@ -9,7 +9,7 @@ export function AppHeader({ label, children }) {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-center gap-4">
           <Link href="/" aria-label="RingAround home">
-            <Logo />
+            <Logo compact />
           </Link>
           {label && (
             <>

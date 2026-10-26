@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getSession } from "@/auth";
 import { isAgentConfigured, listOwnedSessions } from "@/lib/agent";
+import { hasRequests } from "@/lib/db";
 import { AppHeader } from "@/components/app-header";
 import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
 import { Arrow } from "@/components/icons";
+import { CallCount, RequestSummaryCard } from "@/components/request-board";
 import { StatusPill, describeStatus, formatStarted } from "./status";
 import AutoRefresh from "./auto-refresh";
 
@@ -19,12 +21,14 @@ async function RequestList() {
   // Per request: the list depends on who's signed in.
   await connection();
   const authSession = await getSession();
-  if (!authSession?.user?.id) redirect("/sign-in");
+  if (!authSession?.user?.id) redirect("/sign-in?next=/requests");
+  // Nothing to show yet: start them on their first request instead.
+  if (!(await hasRequests(authSession.user.id))) redirect("/requests/new");
 
   const { sessions, truncated } = isAgentConfigured()
     ? await listOwnedSessions(authSession.user.id)
     : { sessions: [], truncated: false };
-  const rows = sessions.map(({ session, idleReason }) => ({ session, status: describeStatus(session, idleReason) }));
+  const rows = sessions.map(({ request, session, idleReason }) => ({ request, session, status: describeStatus(session, idleReason) }));
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-10 sm:px-6 md:pt-14">
@@ -48,18 +52,36 @@ async function RequestList() {
           <p className="mt-2 text-sm text-ink-soft">Requests you send to the agent show up here with their progress.</p>
         </div>
       ) : (
-        <ul className="mt-10 space-y-3">
-          {rows.map(({ session, status }) => (
+        <ul className="mt-10 space-y-5">
+          {rows.map(({ request, session, status }) => (
             <li key={session.id}>
               <Link
                 href={`/requests/${session.id}`}
-                className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-5 transition hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal sm:flex-row sm:items-center sm:justify-between"
+                aria-label={`${request.title}: ${status.label}`}
+                className="block rounded-[28px] border border-line bg-surface/80 p-2 transition hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
               >
-                <span className="min-w-0">
-                  <span className="block break-words font-medium">{session.title || "Quote request"}</span>
-                  <span className="mt-1 block text-sm text-ink-soft">Started {formatStarted(session.created_at)}</span>
-                </span>
-                <StatusPill status={status} />
+                <RequestSummaryCard
+                  label={`Started ${formatStarted(request.createdAt)}`}
+                  live={status.live}
+                  statusLabel={status.label}
+                  title={request.title}
+                  titleAs="h2"
+                  where={request.where}
+                  when={request.when}
+                  budget={request.budget}
+                />
+                <div className="mt-2">
+                  <CallCount placed={request.callsPlaced} cap={request.callCap}>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <StatusPill status={status} />
+                      {request.quotes > 0 && (
+                        <span className="font-medium text-sage">
+                          {request.quotes} {request.quotes === 1 ? "quote" : "quotes"}
+                        </span>
+                      )}
+                    </span>
+                  </CallCount>
+                </div>
               </Link>
             </li>
           ))}

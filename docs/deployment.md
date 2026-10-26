@@ -26,6 +26,7 @@ Everything lives on the `prod` GitHub Environment (Settings → Environments →
 | `CLAUDE_ENVIRONMENT_ID` | variable | Environment its sessions run in |
 | `CLAUDE_VAULT_ID` | variable | Vault holding the credentials the agent's tools need |
 | `ALLOWED_EMAILS` | variable | Google accounts allowed to start calls, comma separated |
+| `MCP_TOKEN` | secret | Bearer token the agent presents to `/api/mcp` to report calls. The same value is stored in the agent's vault |
 
 When all four `CLAUDE_*` values and `ALLOWED_EMAILS` are set, each production deploy uploads them to the Worker. Only signed-in accounts on the list get **Find providers**, which starts the agent; everyone else gets **Send request**, which goes to checkout or account review as before, and the server rejects their sessions regardless. An empty or missing list lets nobody call. To change the list, edit the variable and redeploy. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
 
@@ -61,6 +62,19 @@ The schema is in `migrations/`, and each deploy applies pending migrations befor
 Unsent form drafts and the theme choice stay in the browser, since they belong to one device. Profiles, addresses and applications that older versions kept in the browser are moved to D1 the first time a user visits after this change.
 
 For `npm run dev`, create the local tables once with `npm run db:migrate:local`.
+
+## Call tracking
+
+The calling agent reports each business it contacts to `https://ringaround.me/api/mcp`, an MCP server with one tool, `report_call`. Each request's brief includes its reference (`req_…`), and the tool records the business, status (queued, calling, quoted, retry, declined) and a one-line detail in the `provider_calls` table. The request pages show those rows. The tool also enforces each request's call cap (5): the first call past it is refused, and the agent is told not to dial.
+
+Only the agent can call the endpoint: it presents `MCP_TOKEN`, which lives in its vault as a bearer credential. To connect the agent (once, or again after rotating the token), fill in `.env.local` and run:
+
+```sh
+node --env-file=.env.local scripts/connect-agent.mjs          # shows what would change
+node --env-file=.env.local scripts/connect-agent.mjs --apply
+```
+
+The script adds the MCP server and its toolset (set to `always_allow`, so reports never pause the agent) and stores the token in the vault. It leaves the agent's other tools and its system prompt unchanged.
 
 ## Running the Workers build locally
 
