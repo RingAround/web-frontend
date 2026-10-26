@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/auth";
-import { getOwnedSession, isAgentConfigured, listActivity } from "@/lib/agent";
+import { canStartCalls, getOwnedSession, isAgentConfigured, listActivity } from "@/lib/agent";
 import { getRequest, listProviderCalls } from "@/lib/db";
 import { AppHeader } from "@/components/app-header";
 import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
@@ -115,7 +115,15 @@ async function RequestStatus({ params }) {
         {waitingOnYou && (
           <p className="mb-3 text-sm font-medium text-amber">The agent has paused. If it asked you something above, reply here.</p>
         )}
-        <MessageBox sessionId={session.id} blockedReason={messageBlockedReason(session, idleReason)} waitingOnYou={waitingOnYou} />
+        <MessageBox
+          sessionId={session.id}
+          blockedReason={
+            canStartCalls(authSession.user.email)
+              ? messageBlockedReason(session, idleReason)
+              : "Calling isn’t available for your account."
+          }
+          waitingOnYou={waitingOnYou}
+        />
       </section>
 
       <div className="mt-10 border-t border-line pt-6">

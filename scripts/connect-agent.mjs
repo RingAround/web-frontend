@@ -39,6 +39,15 @@ console.log(`  MCP servers: ${agent.mcp_servers.map((s) => `${s.name} (${s.url})
 console.log(`  tools: ${agent.tools.map((t) => (t.type === "mcp_toolset" ? `mcp_toolset:${t.mcp_server_name}` : t.type === "custom" ? `custom:${t.name}` : t.type)).join(", ") || "none"}`);
 console.log(`  system prompt: ${agent.system ? `${agent.system.length} characters` : "none"}`);
 
+// Progress used to be reported by webhook; reporting now goes through the
+// report_call tool. Show any webhook instructions so they can be removed from
+// the system prompt (this script never edits the prompt itself).
+const webhookLines = (agent.system ?? "").split("\n").map((line, i) => [i + 1, line]).filter(([, line]) => /webhook/i.test(line));
+if (webhookLines.length > 0) {
+  console.log("\n  System prompt lines that mention webhooks (superseded by report_call):");
+  for (const [n, line] of webhookLines) console.log(`    ${n}: ${line.trim()}`);
+}
+
 // Existing tools and servers are sent back as they are; ours is added or replaced.
 const mcpServers = [
   ...agent.mcp_servers.filter((server) => server.name !== SERVER_NAME).map(({ type, name, url }) => ({ type, name, url })),
