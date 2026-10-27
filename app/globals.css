@@ -12,6 +12,7 @@
   --night: #15140f;
   --on-night: #f5f1e8;
   --signal: #ff5a1f;
+  --signal-ink: #b43a13;
   --signal-soft: #ffe2d4;
   --sage: #2f6b4f;
   --sage-soft: #dcebe1;
@@ -31,6 +32,7 @@
   --night: #0a0908;
   --on-night: #f1ece2;
   --signal-soft: #3b2117;
+  --signal-ink: #ff5a1f;
   --sage: #7cc39d;
   --sage-soft: #1b2e23;
   --amber: #e2a94f;
@@ -49,6 +51,7 @@
   --color-ink-soft: var(--ink-soft);
   --color-line: var(--line);
   --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
   --color-signal-soft: var(--signal-soft);
   --color-sage: var(--sage);
   --color-sage-soft: var(--sage-soft);

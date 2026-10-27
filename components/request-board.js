@@ -57,15 +57,15 @@ export function RequestSummaryCard({ label, live, statusLabel, title, where, whe
       <Title className="mt-3 break-words font-display text-2xl leading-tight">{title}</Title>
       <dl className="mt-4 grid grid-cols-3 gap-3 text-xs">
         <div>
-          <dt className="text-on-night/45">Where</dt>
+          <dt className="text-on-night/60">Where</dt>
           <dd className="mt-0.5 break-words">{where || "—"}</dd>
         </div>
         <div>
-          <dt className="text-on-night/45">When</dt>
+          <dt className="text-on-night/60">When</dt>
           <dd className="mt-0.5">{when || "—"}</dd>
         </div>
         <div>
-          <dt className="text-on-night/45">Budget</dt>
+          <dt className="text-on-night/60">Budget</dt>
           <dd className="mt-0.5">{budget || "—"}</dd>
         </div>
       </dl>
