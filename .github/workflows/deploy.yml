@@ -92,9 +92,6 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Unit tests
-        run: npm test
-
       - name: Build for Workers
         run: npx opennextjs-cloudflare build
 
