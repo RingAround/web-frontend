@@ -135,7 +135,7 @@ function ProfileModal({ user, initial, onSaved }) {
           {errors.defaultAddress && <p id="profile-defaultAddress-error" role="alert" className="mt-1 text-sm text-signal">{errors.defaultAddress}</p>}
         </div>
         {errors.storage && <p role="alert" className="rounded-xl border border-signal/30 bg-signal-soft p-3 text-sm">{errors.storage}</p>}
-        <button type="submit" disabled={saving} aria-busy={saving} className="min-h-12 w-full rounded-full bg-signal px-6 py-3 text-sm font-semibold text-white transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving…" : "Save and continue"}</button>
+        <button type="submit" disabled={saving} aria-busy={saving} className="min-h-12 w-full rounded-full bg-signal px-6 py-3 text-sm font-semibold text-on-signal transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving…" : "Save and continue"}</button>
         <p className="text-center text-xs leading-relaxed text-ink-soft">Your profile is saved to your account, so it’s there on any device you sign in on. Your default address will be selected for new requests.</p>
       </form>
     </dialog>

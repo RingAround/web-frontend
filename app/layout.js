@@ -21,9 +21,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata = {
-  title: "RingAround — Local service quotes, less follow-up",
+  title: "RingAround — AI calls on your behalf",
   description:
-    "RingAround contacts local service providers to request pricing and availability. Review provider responses and agent updates in one place.",
+    "Delegate business calls to RingAround. Find services, provide a number to contact, and follow call results and agent updates in one place.",
 };
 
 export default function RootLayout({ children }) {

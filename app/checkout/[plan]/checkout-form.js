@@ -239,7 +239,7 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
               type="submit"
               disabled={submitting}
               aria-busy={submitting}
-              className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-night transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal disabled:cursor-wait disabled:opacity-50"
+              className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-on-signal transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal disabled:cursor-wait disabled:opacity-50"
             >
               {submitting
                 ? "Submitting application…"

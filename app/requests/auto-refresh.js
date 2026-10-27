@@ -8,8 +8,15 @@ import { useRouter } from "next/navigation";
 export default function AutoRefresh({ seconds }) {
   const router = useRouter();
   useEffect(() => {
-    const timer = setInterval(() => router.refresh(), seconds * 1000);
-    return () => clearInterval(timer);
+    const refresh = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    const timer = setInterval(refresh, seconds * 1000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [router, seconds]);
   return null;
 }

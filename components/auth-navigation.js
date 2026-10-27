@@ -8,10 +8,10 @@ import { Arrow } from "./icons";
 const buttonClass =
   "inline-flex min-h-9 min-w-20 items-center justify-center whitespace-nowrap rounded-full border border-line px-3 py-2 text-sm font-medium text-ink transition hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal";
 const requestButtonClass =
-  "group inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-signal hover:text-night focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal";
+  "group inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-signal px-4 py-2 text-sm font-medium text-on-signal transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal";
 
 // Read per request: without connection() the nav is prerendered once at build
-// time, so signed-in visitors would still see "Request access".
+// time, so the account controls reflect the current session.
 async function isSignedIn() {
   await connection();
   return Boolean((await getSession())?.user);
@@ -82,10 +82,10 @@ export async function AuthNavigation() {
   return (
     <>
       <Link
-        href={signedIn ? "/requests/new" : "/checkout/starter"}
+        href="/requests/new"
         className={requestButtonClass}
       >
-        {signedIn ? "New request" : "Request access"} <Arrow />
+        New request <Arrow />
       </Link>
       {/* The New request button already crowds a phone-width header. */}
       <AccountAction

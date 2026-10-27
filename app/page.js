@@ -9,85 +9,67 @@ import {
   AuthNavigationFallback,
 } from "@/components/auth-navigation";
 import { Arrow, CheckGlyph } from "@/components/icons";
-import {
-  CallCount,
-  CallList,
-  RequestSummaryCard,
-} from "@/components/request-board";
+import { HomeCallExample } from "@/components/home-call-example";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PLANS } from "@/lib/plans";
 
 export const metadata = {
-  title: "RingAround — Local service quotes, less follow-up",
+  title: "RingAround — AI calls on your behalf",
   description:
-    "Delegate local provider outreach. RingAround uses AI phone calls to request pricing and availability, with provider responses and updates in one place.",
+    "Give RingAround the instructions and delegate the calls. Find services, contact a business, and follow the results in one place.",
 };
 
-const ACCESS_PATH = "/checkout/starter";
+const REQUEST_PATH = "/requests/new";
+// Add the recorded walkthrough's video URL and optional WebVTT captions here.
+const EXAMPLE_VIDEO_URL = "";
+const EXAMPLE_CAPTIONS_URL = "";
 const primaryButton =
-  "group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-night transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal";
+  "group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-on-signal transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal";
 const secondaryButton =
   "group inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-line px-6 py-3 text-sm font-medium text-ink transition hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal";
-
-const EXAMPLE_CALLS = [
-  {
-    business: "Brightline Cleaning Co.",
-    status: "quoted",
-    detail: "$320 estimate · supplies included · Friday AM",
-  },
-  {
-    business: "Evergreen Maid Service",
-    status: "declined",
-    detail: "Unavailable for the requested date",
-  },
-  {
-    business: "Harbor Home Care",
-    status: "queued",
-    detail: "Awaiting outreach",
-  },
-];
 
 const WORKFLOW = [
   {
     title: "Define the request",
-    body: "Describe the service, location, timing, and budget. Add requirements such as access hours or equipment details.",
+    body: "Explain the outcome you need. Ask RingAround to find businesses or provide a business name and number to contact directly.",
   },
   {
     title: "Delegate the outreach",
-    body: "After you submit, the AI assistant searches for relevant providers and calls to ask about pricing and availability.",
+    body: "After you submit, the AI assistant follows your brief and makes the business calls. Add context or follow-up instructions in the same request.",
   },
   {
     title: "Review and decide",
-    body: "Follow provider responses and agent updates in your request. Confirm the scope and arrange any booking directly with your chosen provider.",
+    body: "Read the results, progress summaries, and available transcript excerpts. Handle bookings, purchases, or other commitments yourself.",
   },
 ];
 
 const USE_CASES = [
   {
-    category: "Property operations",
-    title: "Prepare a unit for its next tenant.",
+    category: "Find and compare services",
+    title: "Get answers from local businesses.",
     example:
-      "Request cleaning availability for a two-bedroom apartment before Friday’s move-in.",
-    details: "Include unit size, access instructions, and the completion date.",
+      "Find a cleaner, repair service, or rental company. Ask about pricing and availability without repeating the same brief on every call.",
+    details:
+      "Available for approved accounts. Results and call updates appear on your request page.",
     icon: "building",
   },
   {
-    category: "Facilities management",
-    title: "Find a provider for routine maintenance.",
+    category: "Call a specific business",
+    title: "Provide the number. Set the task.",
     example:
-      "Ask local HVAC companies about servicing the equipment at your building.",
+      "Ask a hotel about late check-in, follow up on a refund, or contact a business you already know. Supply its number and the outcome you need.",
     details:
-      "Include the equipment type, symptoms, and preferred service window.",
+      "Review the destination before sending. The assistant gathers information without making financial commitments.",
     icon: "tools",
   },
   {
-    category: "Office & site management",
-    title: "Source services around your schedule.",
+    category: "Research, then call you",
+    title: "Get the result in a phone call.",
     example:
-      "Request carpet cleaning estimates for an office, with work outside business hours.",
+      "Give the assistant a research task, then receive a call with the findings instead of checking another dashboard.",
     details:
-      "Include the floor area, location, and after-hours access requirements.",
+      "Select Call me to receive research findings or a spoken briefing on your own number. Calls use the number saved in your profile; calling access requires approval.",
     icon: "calendar",
   },
 ];
@@ -95,11 +77,11 @@ const USE_CASES = [
 const FAQS = [
   {
     q: "What happens after I submit a request?",
-    a: "For approved accounts, submission starts the agent’s provider search and outreach. Businesses and their reported outcomes appear on your request page. The agent may ask you for more information as it works.",
+    a: "For approved accounts, submission starts your selected workflow: find businesses, call a supplied business number, or research a task and call your saved number. Results, reported transcript excerpts, and agent messages appear in the request. You can add instructions without starting a new request.",
   },
   {
     q: "Can I use RingAround immediately?",
-    a: "You can sign in and prepare a request. Calling access requires account review and activation. Submitting an access application does not start calls or guarantee approval.",
+    a: "You can prepare and review a request without signing in. Sign in to complete it. Calling access requires account review and activation. Submitting an access application does not start calls or guarantee approval.",
   },
   {
     q: "Will every provider return a quote?",
@@ -164,27 +146,37 @@ function UseCaseIcon({ type }) {
 function ProductExample() {
   return (
     <figure
-      id="example"
-      className="relative w-full scroll-mt-40 lg:scroll-mt-28"
+      className="relative isolate w-full scroll-mt-40 lg:scroll-mt-28"
     >
+      <svg
+        viewBox="0 0 600 600"
+        className="spin-slow pointer-events-none absolute left-1/2 top-1/2 -z-10 w-[150%] max-w-none -translate-x-1/2 -translate-y-1/2 text-ink"
+        aria-hidden="true"
+      >
+        {[90, 150, 210, 270].map((radius, index) => (
+          <circle
+            key={radius}
+            cx="300"
+            cy="300"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={0.12 - index * 0.02}
+            strokeWidth="1"
+            strokeDasharray={index % 2 ? "2 8" : undefined}
+          />
+        ))}
+        <circle cx="300" cy="30" r="5" fill="var(--signal)" />
+        <circle cx="510" cy="300" r="3.5" fill="var(--sage)" />
+        <circle cx="140" cy="480" r="3.5" fill="var(--ink)" fillOpacity="0.4" />
+      </svg>
       <div className="mb-3 flex items-center justify-between gap-3 px-1 text-xs text-ink-soft">
         <span className="font-medium text-ink">Your request, in one place</span>
         <span className="rounded-full border border-line px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider">
           Illustrative example
         </span>
       </div>
-      <div className="overflow-hidden rounded-[24px] border border-line bg-surface p-2 shadow-[0_24px_64px_-32px_rgb(0_0_0/0.5)]">
-        <RequestSummaryCard
-          label="Service request"
-          statusLabel="Example"
-          title="Turnover clean · 2-bedroom unit"
-          where="Pine St property"
-          when="Before Friday"
-          budget="$250–$400"
-        />
-        <CallList calls={EXAMPLE_CALLS} />
-        <CallCount placed={2} cap={5} />
-      </div>
+      <HomeCallExample />
       <figcaption className="mt-4 px-1 text-xs leading-relaxed text-ink-soft">
         Fictional businesses and illustrative pricing. Actual responses depend
         on the service, location, and provider availability.
@@ -199,7 +191,7 @@ export default async function Home() {
   if (userId && (await hasRequests(userId))) redirect("/requests");
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col overflow-x-clip">
       <a
         href="#main-content"
         className="sr-only z-[60] rounded-lg bg-ink px-4 py-3 text-paper focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
@@ -216,7 +208,7 @@ export default async function Home() {
             aria-label="RingAround home"
             className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
           >
-            <Logo />
+            <Logo animated />
           </a>
           <div className="hidden items-center gap-6 text-[13px] text-ink-soft xl:flex">
             <a href="#how" className="transition hover:text-ink">
@@ -224,6 +216,9 @@ export default async function Home() {
             </a>
             <a href="#who" className="transition hover:text-ink">
               Use cases
+            </a>
+            <a href="#pricing" className="transition hover:text-ink">
+              Pricing
             </a>
             <a href="#faq" className="transition hover:text-ink">
               Questions
@@ -247,27 +242,27 @@ export default async function Home() {
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--signal-soft),transparent_60%)] opacity-40"
             aria-hidden="true"
           />
-          <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:py-24">
+          <div className="relative mx-auto grid max-w-6xl items-start gap-12 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 md:pt-12 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:pb-24">
             <div>
-              <SectionLabel>For property & operations managers</SectionLabel>
+              <SectionLabel>AI calls on your behalf</SectionLabel>
               <h1
                 id="hero-heading"
                 className="mt-6 max-w-xl text-[2.65rem] font-semibold leading-[1.08] tracking-[-0.045em] sm:text-[3.6rem] lg:text-[3.25rem]"
               >
-                Local service quotes.
+                Less time on the phone.
                 <br />
                 <span className="font-display text-[1.13em] font-normal text-signal-ink">
-                  Less time on the phone.
+                  We’ll ring around.
                 </span>
               </h1>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-ink-soft sm:text-lg">
-                RingAround calls local service providers to request pricing and
-                availability. Delegate the outreach and review the responses in
-                one place.
+                Give RingAround the task and the instructions. Find services or
+                call a specific business, follow the conversation, and get the
+                information you need to move forward.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={ACCESS_PATH} className={primaryButton}>
-                  Request access <Arrow />
+                <Link href={REQUEST_PATH} className={primaryButton}>
+                  New request <Arrow />
                 </Link>
                 <a href="#example" className={secondaryButton}>
                   View an example <Arrow />
@@ -279,8 +274,8 @@ export default async function Home() {
               <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 border-t border-line pt-5 text-xs text-ink-soft">
                 {[
                   "AI-assisted phone outreach",
-                  "Provider response tracking",
-                  "You handle the final booking",
+                  "Call summaries and transcript excerpts",
+                  "Add instructions as the task progresses",
                 ].map((item) => (
                   <span key={item} className="flex items-center gap-2">
                     <CheckGlyph className="h-3.5 w-3.5 shrink-0 text-sage" />
@@ -301,7 +296,7 @@ export default async function Home() {
             {[
               [
                 "One brief",
-                "Keep the location, timing, budget, and service requirements together.",
+                "Keep the task, destination, and relevant instructions together.",
               ],
               [
                 "Visible progress",
@@ -328,7 +323,7 @@ export default async function Home() {
         <section
           id="how"
           aria-labelledby="workflow-heading"
-          className="mx-auto max-w-6xl scroll-mt-40 px-4 py-16 sm:px-6 sm:py-20 lg:scroll-mt-28"
+          className="mx-auto max-w-6xl scroll-mt-[71px] px-4 pb-6 pt-8 sm:px-6 sm:pb-8 sm:pt-12"
         >
           <div className="grid gap-5 md:grid-cols-[1fr_0.8fr] md:items-end md:gap-16">
             <div>
@@ -337,13 +332,13 @@ export default async function Home() {
                 id="workflow-heading"
                 className="mt-4 max-w-lg text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
               >
-                From service requirements
-                <br className="hidden sm:block" /> to provider responses.
+                From your instructions
+                <br className="hidden sm:block" /> to a call with a purpose.
               </h2>
             </div>
             <p className="max-w-md text-sm leading-relaxed text-ink-soft">
-              Give the assistant the details you would otherwise repeat on every
-              call. Follow the outreach from a dedicated request page.
+              Set a task, choose who gets called, and follow the conversation
+              from a dedicated request page.
             </p>
           </div>
           <ol className="mt-10 grid gap-4 md:grid-cols-3">
@@ -372,19 +367,104 @@ export default async function Home() {
         </section>
 
         <section
+          id="example"
+          aria-labelledby="example-heading"
+          className="mx-auto max-w-6xl scroll-mt-[71px] px-4 pb-16 pt-[10px] sm:px-6 sm:pb-20"
+        >
+          <div className="grid gap-5 md:grid-cols-[1fr_0.8fr] md:items-end md:gap-16">
+            <div>
+              <SectionLabel>See it in action</SectionLabel>
+              <h2
+                id="example-heading"
+                className="mt-4 max-w-lg text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
+              >
+                A cleaning request, from brief to call result.
+              </h2>
+            </div>
+            <p className="max-w-md text-sm leading-relaxed text-ink-soft">
+              Follow one request in a single video: the screen recording,
+              the phone conversation, and the information returned to the request page.
+            </p>
+          </div>
+
+          <div className="mt-10 grid items-start gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="rounded-2xl border border-line bg-surface/50 p-6 sm:p-7">
+              <h3 className="text-sm font-semibold">The example request</h3>
+              <blockquote className="mt-4 border-l-2 border-signal pl-4 text-sm leading-relaxed text-ink-soft">
+                Find a cleaner for a two-bedroom apartment this Saturday.
+                Ask about pricing, availability, and whether supplies are included.
+              </blockquote>
+              <p className="mt-6 text-xs font-medium text-ink-soft">What the walkthrough will cover</p>
+              <ol className="mt-4 space-y-4">
+                {[
+                  ["Prepare the request", "Enter the service, address, and timing, then review the instructions."],
+                  ["Hear the conversation", "Watch the request progress and hear the assistant ask a provider about the job."],
+                  ["Review the response", "See the call summary and available transcript excerpts before deciding what to do next."],
+                ].map(([title, body], index) => (
+                  <li key={title} className="flex gap-3">
+                    <span className="mt-0.5 font-mono text-xs text-signal-ink">0{index + 1}</span>
+                    <div>
+                      <h4 className="text-sm font-medium">{title}</h4>
+                      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <figure className="overflow-hidden rounded-2xl border border-line bg-surface">
+              {EXAMPLE_VIDEO_URL ? (
+                <video
+                  controls
+                  playsInline
+                  preload="none"
+                  aria-label="Cleaning request walkthrough with screen recording and phone conversation"
+                  className="aspect-video w-full bg-night"
+                >
+                  <source src={EXAMPLE_VIDEO_URL} />
+                  <track kind="captions" src={EXAMPLE_CAPTIONS_URL || undefined} srcLang="en" label="English" />
+                  Your browser does not support video playback. <a href={EXAMPLE_VIDEO_URL}>Open the walkthrough video.</a>
+                </video>
+              ) : (
+                <div className="flex aspect-video flex-col items-center justify-center gap-4 bg-night px-6 text-center text-on-night">
+                  <span className="rounded-full border border-on-night/20 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-on-night/70">
+                    Screen recording + phone call
+                  </span>
+                  <button
+                    type="button"
+                    disabled
+                    aria-describedby="example-video-status"
+                    className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-on-night/25 bg-on-night/10 px-5 py-3 text-sm font-medium text-on-night/80"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    Play walkthrough
+                  </button>
+                  <p id="example-video-status" className="text-sm text-on-night/70">Recording coming soon.</p>
+                </div>
+              )}
+              <figcaption className="border-t border-line px-5 py-4 text-xs leading-relaxed text-ink-soft">
+                One recording, from request setup to the call result. Playback
+                will include audio; watching the video does not start a call.
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section
           id="who"
           aria-labelledby="use-cases-heading"
-          className="scroll-mt-40 border-y border-line/70 bg-surface/40 lg:scroll-mt-28"
+          className="scroll-mt-[71px] border-y border-line/70 bg-surface/40"
         >
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-12">
             <SectionLabel>Practical use cases</SectionLabel>
             <h2
               id="use-cases-heading"
               className="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
             >
-              For the work that keeps
-              <br className="hidden sm:block" /> your properties and sites
-              running.
+              More than finding a quote.
+              <br className="hidden sm:block" /> A way to get the call done.
             </h2>
             <div className="mt-10 grid gap-5 md:grid-cols-3">
               {USE_CASES.map((item) => (
@@ -411,10 +491,22 @@ export default async function Home() {
               ))}
             </div>
             <p className="mt-5 text-xs leading-relaxed text-ink-soft">
-              Examples of service requests, not a guarantee of coverage or
-              provider availability. Some work requires an on-site assessment
-              before pricing.
+              Choose a service search, a direct business call, or research
+              followed by a callback to your saved number. Account activation is
+              required before calls can start.
             </p>
+            <div className="mt-8 rounded-2xl border border-dashed border-line p-6">
+              <h3 className="text-sm font-semibold">
+                Further workflows we’re exploring
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                Appointment scheduling within your availability, scheduled
+                reminder calls, and connecting you once a business
+                representative is on the line. These require additional
+                scheduling, authorization, and telephony support and are not
+                available yet.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -469,9 +561,9 @@ export default async function Home() {
         <section
           id="pricing"
           aria-labelledby="access-heading"
-          className="scroll-mt-40 border-y border-line/70 bg-surface/40 lg:scroll-mt-28"
+          className="scroll-mt-[71px] border-y border-line/70 bg-surface/40"
         >
-          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4 pb-4 pt-8 sm:px-6 sm:pb-5 sm:pt-12">
             <div className="grid gap-5 md:grid-cols-[1fr_0.8fr] md:items-end md:gap-16">
               <div>
                 <SectionLabel>Plans & access</SectionLabel>
@@ -521,13 +613,60 @@ export default async function Home() {
               quote or booking. Provider service charges are separate from your
               RingAround plan.
             </p>
+            <section
+              aria-labelledby="next-step-heading"
+              className="mt-4 sm:mt-5"
+            >
+              <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-line bg-night px-6 py-10 text-on-night sm:p-12">
+                <svg
+                  viewBox="0 0 400 400"
+                  className="pointer-events-none absolute -right-32 -top-32 h-[400px] w-[400px] text-on-night/[0.07]"
+                  aria-hidden="true"
+                >
+                  {[100, 145, 190].map((radius) => (
+                    <circle
+                      key={radius}
+                      cx="200"
+                      cy="200"
+                      r={radius}
+                      fill="none"
+                      stroke="currentColor"
+                    />
+                  ))}
+                </svg>
+                <div className="relative flex flex-wrap items-center justify-between gap-8">
+                  <div className="max-w-xl">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/60">
+                      Your next call
+                    </p>
+                    <h2
+                      id="next-step-heading"
+                      className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
+                    >
+                      Give the next call
+                      <br className="hidden sm:block" /> to RingAround.
+                    </h2>
+                    <p className="mt-4 text-sm leading-relaxed text-on-night/65">
+                      Start with a clear request. Review access requirements, then
+                      put RingAround to work on the calls.
+                    </p>
+                  </div>
+                  <Link
+                    href={REQUEST_PATH}
+                    className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-on-night px-6 py-3 text-sm font-semibold text-night transition hover:bg-signal hover:text-on-signal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+                  >
+                    New request <Arrow />
+                  </Link>
+                </div>
+              </div>
+            </section>
           </div>
         </section>
 
         <section
           id="faq"
           aria-labelledby="faq-heading"
-          className="mx-auto grid max-w-6xl scroll-mt-40 gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:scroll-mt-28 lg:grid-cols-[0.65fr_1.35fr] lg:gap-20"
+          className="mx-auto grid max-w-6xl scroll-mt-[71px] gap-8 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-12 lg:grid-cols-[0.65fr_1.35fr] lg:gap-20"
         >
           <div>
             <SectionLabel>Before you start</SectionLabel>
@@ -535,12 +674,12 @@ export default async function Home() {
               id="faq-heading"
               className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
             >
-              Common questions.
+              Starter Guide
             </h2>
           </div>
           <div className="divide-y divide-line border-y border-line">
             {FAQS.map((item) => (
-              <details key={item.q} className="group py-5">
+              <details key={item.q} name="starter-guide" className="group py-5">
                 <summary className="flex cursor-pointer items-center justify-between gap-5 rounded-sm text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal">
                   {item.q}
                   <span
@@ -558,53 +697,6 @@ export default async function Home() {
           </div>
         </section>
 
-        <section
-          aria-labelledby="next-step-heading"
-          className="px-4 pb-16 sm:px-6 sm:pb-20"
-        >
-          <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-line bg-night px-6 py-10 text-on-night sm:p-12">
-            <svg
-              viewBox="0 0 400 400"
-              className="pointer-events-none absolute -right-32 -top-32 h-[400px] w-[400px] text-on-night/[0.07]"
-              aria-hidden="true"
-            >
-              {[100, 145, 190].map((radius) => (
-                <circle
-                  key={radius}
-                  cx="200"
-                  cy="200"
-                  r={radius}
-                  fill="none"
-                  stroke="currentColor"
-                />
-              ))}
-            </svg>
-            <div className="relative flex flex-wrap items-center justify-between gap-8">
-              <div className="max-w-xl">
-                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-on-night/60">
-                  Your next service request
-                </p>
-                <h2
-                  id="next-step-heading"
-                  className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
-                >
-                  Put provider outreach
-                  <br className="hidden sm:block" /> on your team’s terms.
-                </h2>
-                <p className="mt-4 text-sm leading-relaxed text-on-night/65">
-                  Start with a clear request. Review access requirements, then
-                  put RingAround to work on the calls.
-                </p>
-              </div>
-              <Link
-                href={ACCESS_PATH}
-                className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-signal px-6 py-3 text-sm font-semibold text-night transition hover:bg-on-night hover:text-night focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
-              >
-                Request access <Arrow />
-              </Link>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="border-t border-line">
@@ -632,10 +724,7 @@ export default async function Home() {
             </nav>
           </div>
           <div className="mt-7 flex flex-wrap justify-between gap-3 border-t border-line pt-5 text-xs leading-relaxed text-ink-soft">
-            <p>
-              Provider outreach and information gathering. You arrange the
-              service.
-            </p>
+            <p>Calls on your behalf. Results and updates in one place.</p>
             <p>© 2026 RingAround</p>
           </div>
         </div>

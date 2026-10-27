@@ -2,11 +2,23 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/auth";
-import { canStartCalls, getOwnedSession, isAgentConfigured, listActivity } from "@/lib/agent";
+import {
+  canStartCalls,
+  getOwnedSession,
+  isAgentConfigured,
+  listActivity,
+} from "@/lib/agent";
 import { getRequest, listProviderCalls } from "@/lib/db";
 import { AppHeader } from "@/components/app-header";
-import { AccountNavigation, AccountNavigationFallback } from "@/components/auth-navigation";
-import { CallCount, CallList, RequestSummaryCard } from "@/components/request-board";
+import {
+  AccountNavigation,
+  AccountNavigationFallback,
+} from "@/components/auth-navigation";
+import {
+  CallCount,
+  CallList,
+  RequestSummaryCard,
+} from "@/components/request-board";
 import { describeStatus, formatStarted } from "../status";
 import AutoRefresh from "../auto-refresh";
 import MessageBox from "./message-box";
@@ -17,21 +29,27 @@ export const metadata = {
 };
 
 function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 // Why the requester can't message the agent right now, or null if they can.
 function messageBlockedReason(session, reason) {
   if (session.status === "terminated") return "This request has finished.";
-  if (reason === "budget_reached") return "Paused at its spending limit, so the agent can’t take messages.";
-  if (reason === "requires_action") return "The agent is waiting on a tool approval and can’t take messages yet.";
+  if (reason === "budget_reached")
+    return "Paused at its spending limit, so the agent can’t take messages.";
+  if (reason === "requires_action")
+    return "The agent is waiting on a tool approval and can’t take messages yet.";
   return null;
 }
 
 async function RequestStatus({ params }) {
   const { sessionId } = await params;
   const authSession = await getSession();
-  if (!authSession?.user?.id) redirect(`/sign-in?next=${encodeURIComponent(`/requests/${sessionId}`)}`);
+  if (!authSession?.user?.id)
+    redirect(`/sign-in?next=${encodeURIComponent(`/requests/${sessionId}`)}`);
   if (!isAgentConfigured()) notFound();
 
   const session = await getOwnedSession(sessionId, authSession.user.id);
@@ -42,18 +60,30 @@ async function RequestStatus({ params }) {
     listProviderCalls(session.id),
   ]);
   const status = describeStatus(session, idleReason);
+  const queuedMessages = activity.some(
+    (item) => item.kind === "user" && !item.at,
+  );
+  const directCall =
+    session.metadata?.request_mode === "direct" ||
+    session.metadata?.request_mode === "callback";
   // The agent finished its turn: it's either done or asking the requester something.
   const waitingOnYou = session.status === "idle" && idleReason === "end_turn";
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-10 sm:px-6 md:pt-14">
-      {status.live && <AutoRefresh seconds={5} />}
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">Request</p>
-      <p className="mt-2 text-sm text-ink-soft">Started {formatStarted(session.created_at)}</p>
+      {(status.live ||
+        (queuedMessages && !messageBlockedReason(session, idleReason))) &&
+        session.status !== "terminated" && <AutoRefresh seconds={5} />}
+      <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">
+        Request
+      </p>
+      <p className="mt-2 text-sm text-ink-soft">
+        Started {formatStarted(session.created_at)}
+      </p>
 
       <div className="mt-6 rounded-[28px] border border-line bg-surface/80 p-2 shadow-[0_30px_80px_-30px_rgb(21_20_15/0.35)]">
         <RequestSummaryCard
-          label="Your request"
+          label={directCall ? "Your business call" : "Your request"}
           live={status.live}
           statusLabel={status.label}
           title={request?.title ?? session.title ?? "Your quote request"}
@@ -61,27 +91,98 @@ async function RequestStatus({ params }) {
           where={request?.where}
           when={request?.when}
           budget={request?.budget}
+          whereLabel={directCall ? "Who" : "Where"}
+          budgetLabel={directCall ? "Authorization" : "Budget"}
         />
         {calls.length > 0 ? (
-          <CallList calls={calls} />
+          <CallList
+            calls={calls}
+            outcomeLabel={directCall ? "Result" : "Quote"}
+          />
         ) : (
           <p className="px-4 py-6 text-sm text-ink-soft">
-            {status.live ? "The agent is finding businesses to call. They’ll appear here as it goes." : "No businesses were contacted for this request."}
+            {status.live
+              ? "The agent is finding businesses to call. They’ll appear here as it goes."
+              : "No businesses were contacted for this request."}
           </p>
         )}
         {request && (
           <CallCount placed={request.callsPlaced} cap={request.callCap}>
             {request.quotes > 0 && (
               <span className="font-medium text-sage">
-                {request.quotes} {request.quotes === 1 ? "quote" : "quotes"} so far
+                {request.quotes}{" "}
+                {directCall
+                  ? request.quotes === 1
+                    ? "result"
+                    : "results"
+                  : request.quotes === 1
+                    ? "quote"
+                    : "quotes"}{" "}
+                so far
               </span>
             )}
           </CallCount>
         )}
       </div>
 
+      <section aria-labelledby="call-progress-heading" className="mt-8">
+        <h2 id="call-progress-heading" className="text-base font-semibold">
+          Call progress and results
+        </h2>
+        <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+          Summaries and transcript excerpts update when the calling agent
+          reports new information. They are not a word-for-word live audio
+          stream.
+        </p>
+        {calls.some((call) => call.summary || call.transcriptExcerpt) ? (
+          <div className="mt-4 space-y-4">
+            {calls
+              .filter((call) => call.summary || call.transcriptExcerpt)
+              .map((call) => (
+                <article
+                  key={call.id}
+                  className="rounded-2xl border border-line bg-surface/60 p-5"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="text-sm font-semibold">{call.business}</h3>
+                    <time
+                      dateTime={call.updatedAt}
+                      className="text-xs text-ink-soft"
+                    >
+                      Updated {formatTime(call.updatedAt)}
+                    </time>
+                  </div>
+                  {call.summary && (
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">
+                      {call.summary}
+                    </p>
+                  )}
+                  {call.transcriptExcerpt && (
+                    <details className="mt-4 border-t border-line pt-3">
+                      <summary className="cursor-pointer text-sm font-medium">
+                        View transcript excerpt
+                      </summary>
+                      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-soft">
+                        {call.transcriptExcerpt}
+                      </p>
+                    </details>
+                  )}
+                </article>
+              ))}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-2xl border border-line bg-surface/40 p-5 text-sm text-ink-soft">
+            No call summary or transcript excerpt has been reported yet.
+            Available call statuses and agent messages are shown on this page.
+          </p>
+        )}
+      </section>
+
       <section aria-labelledby="conversation-heading" className="mt-10">
-        <h2 id="conversation-heading" className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">
+        <h2
+          id="conversation-heading"
+          className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft"
+        >
           Updates from the agent
         </h2>
         {activity.length === 0 ? (
@@ -96,10 +197,26 @@ async function RequestStatus({ params }) {
                 className={`rounded-2xl border p-5 ${item.kind === "user" ? "ml-8 border-signal/20 bg-signal-soft/40" : "mr-8 border-line bg-surface/60"}`}
               >
                 <p className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
-                  <span>{item.kind === "user" ? "You" : item.kind === "error" ? "Problem" : "Agent"}</span>
-                  {item.at ? <time dateTime={item.at}>{formatTime(item.at)}</time> : <span>Queued</span>}
+                  <span>
+                    {item.kind === "user"
+                      ? "You"
+                      : item.kind === "error"
+                        ? "Problem"
+                        : "Agent"}
+                  </span>
+                  {item.at ? (
+                    <span>
+                      {item.kind === "user" ? "Received · " : ""}
+                      <time dateTime={item.at}>{formatTime(item.at)}</time>
+                    </span>
+                  ) : (
+                    <span>Queued · awaiting agent</span>
+                  )}
                 </p>
-                <p className={`mt-2 whitespace-pre-wrap break-words ${item.kind === "error" ? "text-sm text-signal" : ""}`} role={item.kind === "error" ? "alert" : undefined}>
+                <p
+                  className={`mt-2 whitespace-pre-wrap break-words ${item.kind === "error" ? "text-sm text-signal" : ""}`}
+                  role={item.kind === "error" ? "alert" : undefined}
+                >
                   {item.text}
                 </p>
               </li>
@@ -113,7 +230,9 @@ async function RequestStatus({ params }) {
           Message the agent
         </h2>
         {waitingOnYou && (
-          <p className="mb-3 text-sm font-medium text-amber">The agent has paused. If it asked you something above, reply here.</p>
+          <p className="mb-3 text-sm font-medium text-amber">
+            The agent has paused. If it asked you something above, reply here.
+          </p>
         )}
         <MessageBox
           sessionId={session.id}
@@ -123,15 +242,24 @@ async function RequestStatus({ params }) {
               : "Calling isn’t available for your account."
           }
           waitingOnYou={waitingOnYou}
+          receipts={activity
+            .filter((item) => item.kind === "user")
+            .map((item) => ({ id: item.id, processed: Boolean(item.at) }))}
         />
       </section>
 
       <div className="mt-10 border-t border-line pt-6">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <Link href="/requests" className="font-medium underline-offset-4 hover:underline">
+          <Link
+            href="/requests"
+            className="font-medium underline-offset-4 hover:underline"
+          >
             All your requests
           </Link>
-          <Link href="/requests/new" className="font-medium underline-offset-4 hover:underline">
+          <Link
+            href="/requests/new"
+            className="font-medium underline-offset-4 hover:underline"
+          >
             Start another request
           </Link>
         </div>
@@ -149,7 +277,13 @@ export default function RequestPage({ params }) {
         </Suspense>
       </AppHeader>
       <main className="flex-1">
-        <Suspense fallback={<p role="status" className="px-6 py-16 text-center text-ink-soft">Loading your request…</p>}>
+        <Suspense
+          fallback={
+            <p role="status" className="px-6 py-16 text-center text-ink-soft">
+              Loading your request…
+            </p>
+          }
+        >
           <RequestStatus params={params} />
         </Suspense>
       </main>

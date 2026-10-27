@@ -90,7 +90,7 @@ function PendingBody({ initialApplication }) {
         </p>
         <Link
           href="/#pricing"
-          className="group mt-8 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-white transition hover:bg-ink hover:text-paper"
+          className="group mt-8 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-on-signal transition hover:bg-ink hover:text-paper"
         >
           View plans and access <Arrow />
         </Link>
