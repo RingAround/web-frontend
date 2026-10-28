@@ -16,14 +16,19 @@ function sameSecret(a, b) {
   const left = encoder.encode(a);
   const right = encoder.encode(b);
   let diff = left.length ^ right.length;
-  for (let i = 0; i < Math.max(left.length, right.length); i += 1) diff |= (left[i] ?? 0) ^ (right[i] ?? 0);
+  for (let i = 0; i < Math.max(left.length, right.length); i += 1)
+    diff |= (left[i] ?? 0) ^ (right[i] ?? 0);
   return diff === 0;
 }
 
 function authorized(request) {
   const expected = process.env.MCP_TOKEN;
   const header = request.headers.get("authorization") ?? "";
-  return Boolean(expected) && header.startsWith("Bearer ") && sameSecret(header.slice(7), expected);
+  return (
+    Boolean(expected) &&
+    header.startsWith("Bearer ") &&
+    sameSecret(header.slice(7), expected)
+  );
 }
 
 function createServer() {
@@ -38,24 +43,81 @@ function createServer() {
       description:
         "Record your latest status for one business on a RingAround request, so the customer can follow along. " +
         'Report "queued" when you shortlist a business, "calling" right before you dial, then "quoted", "retry" or ' +
-        '"declined". If reporting "calling" returns an error, the request\'s call cap is reached: do not place the call.',
+        '"declined". Update summary and transcript_excerpt as the conversation progresses. For a direct business call, "quoted" means a useful answer or result, even without a price. If reporting "calling" returns an error, the request\'s call cap is reached: do not place the call.',
       inputSchema: {
-        request_ref: z.string().regex(/^req_[a-f0-9]{16}$/).describe("The request reference from the brief, e.g. req_0123456789abcdef"),
-        business: z.string().trim().min(1).max(120).describe("Business name as the customer would recognize it"),
-        phone: z.string().trim().max(40).optional().describe("Number you called or will call"),
+        request_ref: z
+          .string()
+          .regex(/^req_[a-f0-9]{16}$/)
+          .describe(
+            "The request reference from the brief, e.g. req_0123456789abcdef",
+          ),
+        business: z
+          .string()
+          .trim()
+          .min(1)
+          .max(120)
+          .describe("Business name as the customer would recognize it"),
+        phone: z
+          .string()
+          .trim()
+          .max(40)
+          .optional()
+          .describe("Number you called or will call"),
         status: z.enum(CALL_STATUSES),
+        summary: z
+          .string()
+          .trim()
+          .max(1000)
+          .optional()
+          .describe(
+            "Concise factual progress or outcome from the call; update after material developments. Do not invent details.",
+          ),
+        transcript_excerpt: z
+          .string()
+          .trim()
+          .max(8000)
+          .optional()
+          .describe(
+            "Latest cumulative excerpt from the actual call transcript, with speaker labels. Omit credentials, payment details, and unrelated sensitive information. Never fabricate dialogue.",
+          ),
         detail: z
           .string()
           .trim()
           .max(200)
-          .describe('One line for the customer, e.g. "$320 flat · Fri 8–11am · supplies included" or "Voicemail · retrying at 2:00pm"'),
+          .describe(
+            'One line for the customer, e.g. "$320 flat · Fri 8–11am · supplies included" or "Voicemail · retrying at 2:00pm"',
+          ),
       },
     },
-    async ({ request_ref, business, phone, status, detail }) => {
-      const result = await reportProviderCall(request_ref, { business, phone, status, detail });
-      if (result.error) return { isError: true, content: [{ type: "text", text: result.error }] };
+    async ({
+      request_ref,
+      business,
+      phone,
+      status,
+      detail,
+      summary,
+      transcript_excerpt,
+    }) => {
+      const result = await reportProviderCall(request_ref, {
+        business,
+        phone,
+        status,
+        detail,
+        summary,
+        transcriptExcerpt: transcript_excerpt,
+      });
+      if (result.error)
+        return {
+          isError: true,
+          content: [{ type: "text", text: result.error }],
+        };
       return {
-        content: [{ type: "text", text: `Recorded ${business}: ${status}. ${result.callsPlaced} of ${result.callCap} calls placed.` }],
+        content: [
+          {
+            type: "text",
+            text: `Recorded ${business}: ${status}. ${result.callsPlaced} of ${result.callCap} calls placed.`,
+          },
+        ],
       };
     },
   );
@@ -63,16 +125,23 @@ function createServer() {
 }
 
 export async function POST(request) {
-  if (!authorized(request)) return new Response("Unauthorized", { status: 401 });
+  if (!authorized(request))
+    return new Response("Unauthorized", { status: 401 });
   const server = createServer();
-  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
   await server.connect(transport);
   return transport.handleRequest(request);
 }
 
 // Stateless: no server-initiated stream to open and no session to end.
 export function GET() {
-  return new Response("Method not allowed", { status: 405, headers: { allow: "POST" } });
+  return new Response("Method not allowed", {
+    status: 405,
+    headers: { allow: "POST" },
+  });
 }
 
 export const DELETE = GET;

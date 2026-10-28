@@ -3,8 +3,14 @@
 import { z } from "zod";
 import { getSession } from "@/auth";
 import { canStartCalls, startRequestSession } from "@/lib/agent";
-import { addLocation, getApplication, getProfile, listLocations, saveProfile } from "@/lib/db";
-import { makeRequestSchema, todayIn } from "@/lib/request";
+import {
+  addLocation,
+  getApplication,
+  getProfile,
+  listLocations,
+  saveProfile,
+} from "@/lib/db";
+import { makeRequestSchema, normalizePhone, todayIn } from "@/lib/request";
 import { userProfileSchema } from "@/lib/user-profile";
 
 const locationSchema = z.object({
@@ -21,11 +27,15 @@ async function signedInUserId() {
 // keyed by field, or { error } for the form as a whole.
 export async function saveProfileAction(input) {
   const userId = await signedInUserId();
-  if (!userId) return { error: "Your sign-in expired. Sign in again to save your profile." };
+  if (!userId)
+    return {
+      error: "Your sign-in expired. Sign in again to save your profile.",
+    };
   const result = userProfileSchema.safeParse(input);
   if (!result.success) {
     const errors = {};
-    for (const issue of result.error.issues) errors[issue.path[0]] ??= issue.message;
+    for (const issue of result.error.issues)
+      errors[issue.path[0]] ??= issue.message;
     return { errors };
   }
   try {
@@ -44,15 +54,25 @@ export async function importBrowserData({ profile, locations }) {
   const userId = await signedInUserId();
   if (!userId) return { profile: null, locations: [] };
   const existing = await getProfile(userId);
-  if (existing) return { profile: existing, locations: await listLocations(userId) };
+  if (existing)
+    return { profile: existing, locations: await listLocations(userId) };
 
   const parsedProfile = userProfileSchema.safeParse(profile);
   if (parsedProfile.success) await saveProfile(userId, parsedProfile.data);
-  for (const location of Array.isArray(locations) ? locations.slice(0, 50) : []) {
+  for (const location of Array.isArray(locations)
+    ? locations.slice(0, 50)
+    : []) {
     const parsed = locationSchema.safeParse(location);
-    if (parsed.success) await addLocation(userId, { ...parsed.data, label: parsed.data.label || parsed.data.address.split(",")[0].trim() });
+    if (parsed.success)
+      await addLocation(userId, {
+        ...parsed.data,
+        label: parsed.data.label || parsed.data.address.split(",")[0].trim(),
+      });
   }
-  return { profile: parsedProfile.success ? parsedProfile.data : null, locations: await listLocations(userId) };
+  return {
+    profile: parsedProfile.success ? parsedProfile.data : null,
+    locations: await listLocations(userId),
+  };
 }
 
 // Saves an address from the request form the first time it's used. Returns
@@ -74,23 +94,43 @@ export async function saveLocationAction(input) {
 // hasApplication } for accounts that aren't approved to call yet, or { error }.
 export async function sendRequest({ request }) {
   const session = await getSession();
-  if (!session?.user?.id) return { error: "Your sign-in expired. Sign in again to send this request." };
+  if (!session?.user?.id)
+    return {
+      error: "Your sign-in expired. Sign in again to send this request.",
+    };
   // The page hides the button for unapproved accounts; this is the check that counts.
   if (!canStartCalls(session.user.email)) {
-    return { needsAccount: true, hasApplication: Boolean(await getApplication(session.user.id)) };
+    return {
+      needsAccount: true,
+      hasApplication: Boolean(await getApplication(session.user.id)),
+    };
   }
 
   // Re-validate: everything from the browser is untrusted, including what the
   // form already checked. "Today" is the job site's date, as the form uses.
-  const timeZone = typeof request?.timeZone === "string" ? request.timeZone : "UTC";
+  const timeZone =
+    typeof request?.timeZone === "string" ? request.timeZone : "UTC";
   const parsedRequest = makeRequestSchema(todayIn(timeZone)).safeParse(request);
   if (!parsedRequest.success) {
-    return { error: "Some details are missing or out of date. Edit the request and try again." };
+    return {
+      error:
+        "Some details are missing or out of date. Edit the request and try again.",
+    };
   }
   // The callback number the agent gives out comes from the stored profile,
   // never from the browser.
   const profile = await getProfile(session.user.id);
-  if (!profile) return { error: "Finish your profile before sending a request." };
+  if (!profile)
+    return { error: "Finish your profile before sending a request." };
+  if (
+    parsedRequest.data.destination.mode === "callback" &&
+    !/^\+[1-9]\d{6,14}$/.test(normalizePhone(profile.phone))
+  ) {
+    return {
+      error:
+        "Your saved callback number must include a country code, such as +1. Update your profile phone number before requesting a callback.",
+    };
+  }
 
   try {
     const sessionId = await startRequestSession({
@@ -102,6 +142,9 @@ export async function sendRequest({ request }) {
     return { sessionId };
   } catch (error) {
     console.error("Failed to start agent session", error);
-    return { error: "We couldn’t start the agent. Nothing was sent — try again in a minute." };
+    return {
+      error:
+        "We couldn’t start the agent. Nothing was sent — try again in a minute.",
+    };
   }
 }

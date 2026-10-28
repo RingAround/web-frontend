@@ -21,9 +21,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata = {
-  title: "RingAround — Your AI agent for service quotes",
+  title: "RingAround — AI calls on your behalf",
   description:
-    "Describe the job once. RingAround finds local providers, calls them with your approval, and hands you quotes you can actually compare.",
+    "Delegate business calls to RingAround. Find services, provide a number to contact, and follow call results and agent updates in one place.",
 };
 
 export default function RootLayout({ children }) {
@@ -31,6 +31,7 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       data-theme="dark"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
       suppressHydrationWarning
     >

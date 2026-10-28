@@ -40,7 +40,7 @@ async function RequestList() {
         </div>
         <Link
           href="/requests/new"
-          className="group inline-flex items-center gap-2 rounded-full bg-signal px-5 py-3 font-medium text-white transition hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+          className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 font-medium text-paper transition hover:bg-signal hover:text-on-signal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
         >
           New request <Arrow />
         </Link>
