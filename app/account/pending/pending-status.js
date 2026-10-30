@@ -10,7 +10,6 @@ import {
   readAccount,
 } from "@/lib/account";
 import { importBrowserApplication } from "../actions";
-import { findPlan } from "@/lib/plans";
 import { useBrowserValue } from "@/lib/use-browser-value";
 
 const NEXT_STEPS = [
@@ -86,19 +85,18 @@ function PendingBody({ initialApplication }) {
           No account in review yet.
         </h1>
         <p className="mt-4 max-w-xl text-ink-soft">
-          Select a plan and submit your account details for access review.
+          Submit your account details for access review.
         </p>
         <Link
-          href="/#pricing"
+          href="/apply"
           className="group mt-8 inline-flex items-center gap-2 rounded-full bg-signal px-6 py-3.5 font-medium text-on-signal transition hover:bg-ink hover:text-paper"
         >
-          View plans and access <Arrow />
+          Request access <Arrow />
         </Link>
       </div>
     );
   }
 
-  const plan = findPlan(account.plan);
   const firstName = account.name.trim().split(/\s+/)[0];
   const submitted = formatSubmittedDate(account.submittedAt);
 
@@ -137,22 +135,7 @@ function PendingBody({ initialApplication }) {
             </p>
           )}
         </div>
-        <dl className="grid gap-px bg-line sm:grid-cols-3">
-          <div className="bg-surface p-6">
-            <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
-              Plan
-            </dt>
-            <dd className="mt-2">
-              {plan ? (
-                <>
-                  <span className="font-medium">{plan.name}</span> · $
-                  {plan.price}/month
-                </>
-              ) : (
-                "—"
-              )}
-            </dd>
-          </div>
+        <dl className="grid gap-px bg-line sm:grid-cols-2">
           <div className="bg-surface p-6">
             <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
               Payment details

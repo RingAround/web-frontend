@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Arrow, CheckGlyph } from "@/components/icons";
-import { RadioDot, cardChoiceClass, inputClass } from "@/components/form-parts";
+import { inputClass } from "@/components/form-parts";
 import { hasRequestDraft } from "@/lib/account";
 import { submitApplication } from "@/app/account/actions";
-import { PLANS, findPlan } from "@/lib/plans";
 import { useBrowserValue } from "@/lib/use-browser-value";
 
 const ROLES = [
@@ -28,9 +27,8 @@ function validate(details) {
   return errors;
 }
 
-export default function CheckoutForm({ initialPlanId, defaults }) {
+export default function ApplicationForm({ defaults }) {
   const router = useRouter();
-  const [planId, setPlanId] = useState(initialPlanId);
   const [details, setDetails] = useState(() => ({
     ...EMPTY_DETAILS,
     ...defaults,
@@ -38,7 +36,6 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const requestWaiting = useBrowserValue(hasRequestDraft);
-  const plan = findPlan(planId);
 
   function editDetails(patch) {
     setDetails((current) => ({ ...current, ...patch }));
@@ -49,11 +46,6 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
         ),
       ),
     );
-  }
-
-  function choosePlan(id) {
-    setPlanId(id);
-    window.history.replaceState(null, "", `/checkout/${id}`);
   }
 
   async function handleSubmit(event) {
@@ -73,7 +65,6 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
         email: details.email.trim(),
         company: details.company.trim(),
         role: details.role,
-        plan: planId,
       });
       if (result.error) {
         setErrors({ form: result.error });
@@ -98,9 +89,9 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
         Request access to RingAround.
       </h1>
       <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink-soft">
-        Tell us about your account and select a plan. Calling access requires
-        review and activation. No payment details are collected with this
-        application.
+        Tell us about your account. Calling access requires review and
+        activation. RingAround does not take credit cards or collect any
+        payment details.
       </p>
       {requestWaiting && (
         <p className="mt-6 flex items-start gap-2 rounded-xl border border-sage/30 bg-sage-soft p-4 text-sm text-sage">
@@ -194,38 +185,6 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
             </div>
           </fieldset>
 
-          <fieldset
-            disabled={submitting}
-            className="min-w-0 border-t border-line pt-5 disabled:opacity-60"
-          >
-            <legend className="px-2 text-base font-semibold">
-              Preferred plan
-            </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {PLANS.map((item) => (
-                <label key={item.id} className={cardChoiceClass}>
-                  <input
-                    type="radio"
-                    name="plan"
-                    value={item.id}
-                    checked={planId === item.id}
-                    onChange={() => choosePlan(item.id)}
-                    className="sr-only"
-                  />
-                  <RadioDot />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold">
-                      {item.name} · ${item.price}/month
-                    </span>
-                    <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
-                      {item.quota}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
           {errors.form && (
             <p
               role="alert"
@@ -247,8 +206,8 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
               <Arrow />
             </button>
             <p className="mt-3 text-center text-xs leading-relaxed text-ink-soft">
-              Submitting an application does not activate calling or collect
-              payment.
+              Submitting an application does not activate calling. No card or
+              payment details are requested.
             </p>
           </div>
         </form>
@@ -264,7 +223,7 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
             {[
               [
                 "Application review",
-                "Your account details and preferred plan are submitted for review.",
+                "Your account details are submitted for review.",
               ],
               [
                 "Account activation",
@@ -289,11 +248,10 @@ export default function CheckoutForm({ initialPlanId, defaults }) {
             ))}
           </ol>
           <div className="mt-6 border-t border-line pt-5 text-xs leading-relaxed text-ink-soft">
-            <p className="font-medium text-ink">
-              {plan.name}: ${plan.price}/month
-            </p>
+            <p className="font-medium text-ink">No payment collected</p>
             <p className="mt-2">
-              Provider service charges are separate. Responses, quotes, and
+              RingAround does not take credit cards. Provider service charges
+              are between you and the provider. Responses, quotes, and
               availability depend on the providers contacted.
             </p>
           </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-// Header for the app pages (request form, checkout, account review).
+// Header for the app pages (request form, access application, account review).
 export function AppHeader({ label, children }) {
   return (
     <header className="sticky top-0 z-40 border-b border-line/60 bg-paper/85 backdrop-blur-md">

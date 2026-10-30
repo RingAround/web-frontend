@@ -21,7 +21,7 @@ sequenceDiagram
     Customer->>Web: Submit request (/requests/new)
     Web->>Web: Check ALLOWED_EMAILS
     alt Account not allowed
-        Web-->>Customer: Checkout or account review
+        Web-->>Customer: Access application or account review
     else Account allowed
         Web->>Agent: Create session with brief (req_ reference, $2 budget)
         Web->>D1: Record request
@@ -46,11 +46,11 @@ sequenceDiagram
 
 | Path | What it holds |
 | --- | --- |
-| `app/` | Routes: home page, `/sign-in`, `/requests` (list, new, detail), `/checkout/[plan]`, `/account/pending`, and the API routes for Auth.js and MCP |
+| `app/` | Routes: home page, `/sign-in`, `/requests` (list, new, detail), `/apply`, `/account/pending`, and the API routes for Auth.js and MCP |
 | `components/` | Shared UI: header, navigation, theme toggle, form parts, icons |
 | `lib/agent.js` | Starts and reads agent sessions, writes the brief, gates calls by `ALLOWED_EMAILS` (server only) |
 | `lib/db.js` | D1 access for profiles, saved locations, applications, requests and provider calls |
-| `lib/` (other) | Request validation and formatting, plans, service categories, theme helpers |
+| `lib/` (other) | Request validation and formatting, service categories, theme helpers |
 | `auth.js` | NextAuth.js v5 config with Google OAuth |
 | `migrations/` | D1 schema, applied before every deploy |
 | `skills/ringaround/SKILL.md` | The skill the calling agent works from, uploaded on each production deploy |

@@ -1,4 +1,4 @@
-// Shared input styles and small pieces for the request and checkout forms.
+// Shared input styles and small pieces for the request and access application forms.
 export const fieldBase =
   "mt-2 w-full rounded-2xl border border-line bg-surface py-3 text-[15px] text-ink outline-none transition placeholder:text-ink-soft/55 focus:border-ink focus:ring-4 focus:ring-ink/5 aria-[invalid=true]:border-signal aria-[invalid=true]:ring-4 aria-[invalid=true]:ring-signal/10";
 export const inputClass = `${fieldBase} px-4`;

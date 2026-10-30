@@ -3,22 +3,22 @@
 import { z } from "zod";
 import { getSession } from "@/auth";
 import { getApplication, saveApplication } from "@/lib/db";
-import { findPlan } from "@/lib/plans";
 
-// The fields checkout collects. Card details are deliberately absent: they
-// never leave the checkout form.
+// The fields the access application collects. RingAround takes no card or
+// payment details. Plans are paused, so `plan` is stored empty; older
+// applications may still carry a plan id.
 const applicationSchema = z.object({
   name: z.string().trim().min(1).max(120),
   email: z.string().trim().email().max(254),
   company: z.string().trim().max(120).default(""),
   role: z.string().trim().max(60).default(""),
-  plan: z.string().refine((id) => Boolean(findPlan(id))),
+  plan: z.string().trim().max(40).default(""),
 });
 
-// Saves the checkout application for the signed-in user. Returns { ok } or { error }.
+// Saves the access application for the signed-in user. Returns { ok } or { error }.
 export async function submitApplication(input) {
   const userId = (await getSession())?.user?.id;
-  if (!userId) return { error: "Your sign-in expired. Sign in again to finish checkout." };
+  if (!userId) return { error: "Your sign-in expired. Sign in again to finish your application." };
   const parsed = applicationSchema.safeParse(input);
   if (!parsed.success) return { error: "Some details are missing. Check the form and try again." };
   try {
