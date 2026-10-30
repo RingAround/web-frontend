@@ -12,6 +12,10 @@ const nextConfig = {
   // Cache Components on. Nothing here uses "use cache" yet. See docs/deployment.md.
   cacheComponents: false,
   partialPrefetching: false,
+  // Plans and checkout are paused; old plan links go to the access application.
+  async redirects() {
+    return [{ source: "/checkout/:plan", destination: "/apply", permanent: false }];
+  },
   turbopack: {
     rules: {
       "*.css": {

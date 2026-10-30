@@ -12,7 +12,6 @@ import { Arrow, CheckGlyph } from "@/components/icons";
 import { HomeCallExample } from "@/components/home-call-example";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { PLANS } from "@/lib/plans";
 
 export const metadata = {
   title: "RingAround — AI calls on your behalf",
@@ -21,6 +20,7 @@ export const metadata = {
 };
 
 const REQUEST_PATH = "/requests/new";
+const APPLY_PATH = "/apply";
 // Add the recorded walkthrough's video URL and optional WebVTT captions here.
 const EXAMPLE_VIDEO_URL = "";
 const EXAMPLE_CAPTIONS_URL = "";
@@ -71,6 +71,29 @@ const USE_CASES = [
     details:
       "Select Call me to receive research findings or a spoken briefing on your own number. Calls use the number saved in your profile; calling access requires approval.",
     icon: "calendar",
+  },
+];
+
+const HACKATHON_LINKS = [
+  {
+    source: "Claude Impact Lab",
+    title: "Claude Impact Lab Hackathon, Seattle",
+    href: "https://hack.claudeseattle.org/",
+  },
+  {
+    source: "GitHub",
+    title: "Projects from the hackathon, with RingAround listed as a finalist",
+    href: "https://github.com/00Zero/claude-impact-lab-seattle-oct-2026",
+  },
+  {
+    source: "GeekWire",
+    title: "Seattle AI Week: Claude Impact Lab Hackathon",
+    href: "https://www.geekwire.com/calendar-event/seattle-ai-week-claude-impact-lab-hackathon/",
+  },
+  {
+    source: "Luma",
+    title: "Claude Impact Lab event page",
+    href: "https://luma.com/claude-impact",
   },
 ];
 
@@ -217,8 +240,11 @@ export default async function Home() {
             <a href="#who" className="transition hover:text-ink">
               Use cases
             </a>
-            <a href="#pricing" className="transition hover:text-ink">
-              Pricing
+            <a href="#access" className="transition hover:text-ink">
+              Access
+            </a>
+            <a href="#hackathon" className="transition hover:text-ink">
+              Hackathon
             </a>
             <a href="#faq" className="transition hover:text-ink">
               Questions
@@ -559,14 +585,14 @@ export default async function Home() {
         </section>
 
         <section
-          id="pricing"
+          id="access"
           aria-labelledby="access-heading"
           className="scroll-mt-[71px] border-y border-line/70 bg-surface/40"
         >
           <div className="mx-auto max-w-6xl px-4 pb-4 pt-8 sm:px-6 sm:pb-5 sm:pt-12">
             <div className="grid gap-5 md:grid-cols-[1fr_0.8fr] md:items-end md:gap-16">
               <div>
-                <SectionLabel>Plans & access</SectionLabel>
+                <SectionLabel>Access</SectionLabel>
                 <h2
                   id="access-heading"
                   className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
@@ -575,43 +601,47 @@ export default async function Home() {
                 </h2>
               </div>
               <p className="max-w-md text-sm leading-relaxed text-ink-soft">
-                New accounts are reviewed before calling is enabled. Select a
-                plan to submit your application. No payment details are required
-                to apply.
+                New accounts are reviewed before calling is enabled. Applying
+                is free, and no card or payment details are requested.
               </p>
             </div>
             <div className="mt-10 grid gap-5 md:grid-cols-2">
-              {PLANS.map((plan) => (
-                <article
-                  key={plan.id}
-                  className="rounded-2xl border border-line bg-paper p-6 sm:p-8"
+              <article className="rounded-2xl border border-line bg-paper p-6 sm:p-8">
+                <h3 className="text-lg font-semibold">Request access</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                  Tell us who you are and how you plan to use RingAround. We
+                  enable calling once your account is reviewed.
+                </p>
+                <Link
+                  href={APPLY_PATH}
+                  className={`${secondaryButton} mt-7 w-full`}
                 >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h3 className="text-lg font-semibold">{plan.name}</h3>
-                    <p className="text-3xl font-semibold tracking-tight">
-                      ${plan.price}
-                      <span className="ml-1 text-sm font-normal tracking-normal text-ink-soft">
-                        / month
-                      </span>
-                    </p>
-                  </div>
-                  <p className="mt-4 text-sm font-medium">{plan.quota}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                    {plan.blurb}
-                  </p>
-                  <Link
-                    href={`/checkout/${plan.id}`}
-                    className={`${secondaryButton} mt-7 w-full`}
-                  >
-                    Apply for {plan.name} <Arrow />
-                  </Link>
-                </article>
-              ))}
+                  Apply for access <Arrow />
+                </Link>
+              </article>
+              <article className="rounded-2xl border border-line bg-paper p-6 sm:p-8">
+                <h3 className="text-lg font-semibold">No credit card</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                  RingAround does not take credit cards or collect payment
+                  details. Paid plans are paused for now.
+                </p>
+                <ul className="mt-5 space-y-2 text-sm text-ink-soft">
+                  {[
+                    "No card required to apply",
+                    "No payment details stored",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <CheckGlyph className="h-3.5 w-3.5 shrink-0 text-sage" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </article>
             </div>
             <p className="mt-5 text-xs leading-relaxed text-ink-soft">
               A request initiates provider outreach; it does not guarantee a
-              quote or booking. Provider service charges are separate from your
-              RingAround plan.
+              quote or booking. Provider service charges are between you and
+              the provider.
             </p>
             <section
               aria-labelledby="next-step-heading"
@@ -697,6 +727,54 @@ export default async function Home() {
           </div>
         </section>
 
+        <section
+          id="hackathon"
+          aria-labelledby="hackathon-heading"
+          className="scroll-mt-[71px] border-t border-line/70 bg-surface/40"
+        >
+          <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 sm:pt-12 lg:grid-cols-[0.65fr_1.35fr] lg:gap-20">
+            <div>
+              <SectionLabel>Where it started</SectionLabel>
+              <h2
+                id="hackathon-heading"
+                className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl"
+              >
+                Built at the Claude Impact Lab in Seattle.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-relaxed text-ink-soft">
+                RingAround was built in a day at the Claude Impact Lab
+                Hackathon on October 25, 2026, during Seattle AI Week. The
+                theme was AI tools small businesses can adopt, and RingAround
+                was a finalist.
+              </p>
+            </div>
+            <ul className="divide-y divide-line border-y border-line">
+              {HACKATHON_LINKS.map((item) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between gap-5 rounded-sm py-5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
+                  >
+                    <span>
+                      <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft">
+                        {item.source}
+                      </span>
+                      <span className="mt-1 block text-sm font-medium transition group-hover:text-signal-ink">
+                        {item.title}
+                      </span>
+                    </span>
+                    <span className="shrink-0">
+                      <Arrow />
+                    </span>
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t border-line">
@@ -712,8 +790,11 @@ export default async function Home() {
               <a href="#how" className="hover:text-ink">
                 How it works
               </a>
-              <a href="#pricing" className="hover:text-ink">
-                Plans & access
+              <a href="#access" className="hover:text-ink">
+                Access
+              </a>
+              <a href="#hackathon" className="hover:text-ink">
+                Claude Impact Lab
               </a>
               <Link href="/requests" className="hover:text-ink">
                 Your requests

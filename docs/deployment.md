@@ -28,7 +28,7 @@ Everything lives on the `prod` GitHub Environment (Settings → Environments →
 | `ALLOWED_EMAILS` | variable | Google accounts allowed to start calls, comma separated |
 | `MCP_TOKEN` | secret | Bearer token the agent presents to `/api/mcp` to report calls. The same value is stored in the agent's vault |
 
-When all four `CLAUDE_*` values and `ALLOWED_EMAILS` are set, each production deploy uploads them to the Worker. Only signed-in accounts on the list get **Find providers**, which starts the agent; everyone else gets **Send request**, which goes to checkout or account review as before, and the server rejects their sessions regardless. An empty or missing list lets nobody call. To change the list, edit the variable and redeploy. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
+When all four `CLAUDE_*` values and `ALLOWED_EMAILS` are set, each production deploy uploads them to the Worker. Only signed-in accounts on the list get **Find providers**, which starts the agent; everyone else gets **Send request**, which goes to the access application or account review as before, and the server rejects their sessions regardless. An empty or missing list lets nobody call. To change the list, edit the variable and redeploy. Previews never get them, so a preview can't place real calls. Each request's session is capped at $2 of list-price spend (`SESSION_BUDGET_CENTS` in `lib/agent.js`); a session that hits the cap pauses.
 
 ### The agent's skill
 

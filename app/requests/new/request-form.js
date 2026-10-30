@@ -500,7 +500,7 @@ function RequestFormBody({
   }
 
   // Approved accounts start the agent; the server checks again. Everyone else
-  // goes to checkout or the account review page, and the draft stays saved.
+  // goes to the access application or the account review page, and the draft stays saved.
   // Resolves with an error message, or navigates away.
   async function send() {
     if (!signedIn) return "Sign in to complete this request.";
@@ -524,7 +524,7 @@ function RequestFormBody({
     } catch {
       // Storage blocked: the draft itself is still saved.
     }
-    router.push(applied ? "/account/pending" : "/checkout/starter");
+    router.push(applied ? "/account/pending" : "/apply");
     return null;
   }
 
