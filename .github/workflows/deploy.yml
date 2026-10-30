@@ -158,9 +158,12 @@ jobs:
         run: npx wrangler d1 migrations apply DB --remote
 
       # The agent's skill (skills/ringaround/SKILL.md) ships with the code that
-      # writes its brief, so a failed upload stops the deploy. An unchanged file
-      # uploads nothing. Previews skip this: they share the production agent.
+      # writes its brief. An unchanged file uploads nothing. Previews skip this:
+      # they share the production agent. A failure here (for example an expired
+      # API key) shows as a warning but doesn't hold back the site: the agent
+      # keeps its previous skill.
       - name: Deploy the agent skill
+        continue-on-error: true
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           CLAUDE_AGENT_ID: ${{ vars.CLAUDE_AGENT_ID }}
@@ -169,15 +172,7 @@ jobs:
             echo "::warning::Agent skill not deployed: CLAUDE_API_KEY or CLAUDE_AGENT_ID is not set on the \`prod\` environment. See docs/deployment.md."
             exit 0
           fi
-          set -o pipefail
-          out=$(mktemp)
-          if ! node scripts/deploy-skill.mjs --apply 2>&1 | tee "$out"; then
-            if grep -q "authentication_error" "$out"; then
-              echo "::warning::Agent skill not deployed: the Claude API rejected CLAUDE_API_KEY (invalid x-api-key). Update the \`prod\` environment secret. See docs/deployment.md."
-              exit 0
-            fi
-            exit 1
-          fi
+          node scripts/deploy-skill.mjs --apply
 
       # Points the agent at /api/mcp (report_call), keeps the vault's MCP_TOKEN
       # matching the Worker's, and applies agent/system-prompt.md. Runs after
