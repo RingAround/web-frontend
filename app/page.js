@@ -765,7 +765,9 @@ export default async function Home() {
                         {item.title}
                       </span>
                     </span>
-                    <Arrow />
+                    <span className="shrink-0">
+                      <Arrow />
+                    </span>
                     <span className="sr-only">(opens in a new tab)</span>
                   </a>
                 </li>
