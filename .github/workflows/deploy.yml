@@ -158,9 +158,12 @@ jobs:
         run: npx wrangler d1 migrations apply DB --remote
 
       # The agent's skill (skills/ringaround/SKILL.md) ships with the code that
-      # writes its brief, so a failed upload stops the deploy. An unchanged file
-      # uploads nothing. Previews skip this: they share the production agent.
+      # writes its brief. An unchanged file uploads nothing. Previews skip this:
+      # they share the production agent. A failure here (for example an expired
+      # API key) shows as a warning but doesn't hold back the site: the agent
+      # keeps its previous skill.
       - name: Deploy the agent skill
+        continue-on-error: true
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           CLAUDE_AGENT_ID: ${{ vars.CLAUDE_AGENT_ID }}
