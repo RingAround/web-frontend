@@ -169,7 +169,15 @@ jobs:
             echo "::warning::Agent skill not deployed: CLAUDE_API_KEY or CLAUDE_AGENT_ID is not set on the \`prod\` environment. See docs/deployment.md."
             exit 0
           fi
-          node scripts/deploy-skill.mjs --apply
+          set -o pipefail
+          out=$(mktemp)
+          if ! node scripts/deploy-skill.mjs --apply 2>&1 | tee "$out"; then
+            if grep -q "authentication_error" "$out"; then
+              echo "::warning::Agent skill not deployed: the Claude API rejected CLAUDE_API_KEY (invalid x-api-key). Update the \`prod\` environment secret. See docs/deployment.md."
+              exit 0
+            fi
+            exit 1
+          fi
 
       # Points the agent at /api/mcp (report_call), keeps the vault's MCP_TOKEN
       # matching the Worker's, and applies agent/system-prompt.md. Runs after
